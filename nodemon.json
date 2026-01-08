@@ -1,0 +1,7 @@
+{
+    "ignore": [
+        "otp_codes/*",
+        "*.log",
+        "temp/*"
+    ]
+}
