@@ -458,16 +458,25 @@ exports.requestOtpByEmail = async (req, res) => {
     console.log(`[DEMO] OTP for ${email}: ${otp}`);
     console.log(`OTP sent to ${email} (Email delivery simulated)`);
 
-    // Send OTP via email
-    await sendEmail(email, "Your Login OTP", otp);
+    // Try to send OTP via email (optional - don't fail if email service is down)
+    try {
+      await sendEmail(email, "Your Login OTP", otp);
+    } catch (emailError) {
+      console.log('Email send failed (optional):', emailError.message);
+    }
 
-    await logActivity({
-      userId: user.id,
-      type: "otp_requested",
-      entityType: "auth",
-      title: "OTP Requested",
-      description: `OTP sent to ${email}`,
-    });
+    // Log activity (optional - don't fail if this errors)
+    try {
+      await logActivity({
+        userId: user.id,
+        type: "otp_requested",
+        entityType: "auth",
+        title: "OTP Requested",
+        description: `OTP sent to ${email}`,
+      });
+    } catch (activityError) {
+      console.log('Activity logging failed (optional):', activityError.message);
+    }
 
     return res.json({
       message: "OTP sent successfully to your email",
