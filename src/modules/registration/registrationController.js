@@ -269,8 +269,8 @@ exports.resendVerification = async (req, res) => {
 };
 
 module.exports = {
-    registerSociety,
-    verifyEmail,
-    checkAvailability,
-    resendVerification,
+    registerSociety: exports.registerSociety,
+    verifyEmail: exports.verifyEmail,
+    checkAvailability: exports.checkAvailability,
+    resendVerification: exports.resendVerification,
 };
