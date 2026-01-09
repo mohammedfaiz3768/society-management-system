@@ -441,16 +441,16 @@ exports.requestOtpByEmail = async (req, res) => {
     const user = userResult.rows[0];
     const otp = generateOtp();
 
-    // Mark old OTPs as used
+    // Delete old OTPs for this email
     await pool.query(
-      `UPDATE otp_codes SET used = TRUE WHERE email = $1`,
+      `DELETE FROM otp_codes WHERE email = $1`,
       [email]
     );
 
     // Insert new OTP
     await pool.query(
-      `INSERT INTO otp_codes (email, otp, expires_at, used, created_at)
-       VALUES ($1, $2, NOW() + INTERVAL '5 minutes', FALSE, NOW())`,
+      `INSERT INTO otp_codes (email, code, expires_at, created_at)
+       VALUES ($1, $2, NOW() + INTERVAL '5 minutes', NOW())`,
       [email, otp]
     );
 
@@ -491,8 +491,7 @@ exports.verifyOtpByEmail = async (req, res) => {
     const otpRow = await pool.query(
       `SELECT * FROM otp_codes
        WHERE email = $1
-         AND otp = $2
-         AND used = FALSE
+         AND code = $2
          AND expires_at > NOW()
        ORDER BY id DESC
        LIMIT 1`,
@@ -503,9 +502,9 @@ exports.verifyOtpByEmail = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Mark OTP as used
+    // Delete used OTP
     await pool.query(
-      `UPDATE otp_codes SET used = TRUE WHERE id = $1`,
+      `DELETE FROM otp_codes WHERE id = $1`,
       [otpRow.rows[0].id]
     );
 
