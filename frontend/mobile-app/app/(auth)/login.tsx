@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -23,7 +23,7 @@ export default function LoginScreen() {
     });
 
     const sendOtpMutation = useMutation({
-        mutationFn: (data: LoginFormData) => sendOtp(data),
+        mutationFn: (data: Login FormData) => sendOtp(data),
         onSuccess: (_, variables) => {
             router.push({
                 pathname: '/(auth)/otp',
@@ -40,26 +40,26 @@ export default function LoginScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white p-6 justify-center">
+        <SafeAreaView style={styles.container}>
             <StatusBar style="dark" />
-            <View className="mb-10 items-center">
-                {/* Placeholder Logo */}
-                <View className="w-24 h-24 bg-slate-200 rounded-2xl mb-4 items-center justify-center">
-                    <Text className="text-3xl">🏙️</Text>
+            <View style={styles.logoContainer}>
+                {/* Logo */}
+                <View style={styles.logo}>
+                    <Text style={styles.logoEmoji}>🏙️</Text>
                 </View>
-                <Text className="text-2xl font-bold text-slate-900">Welcome Back</Text>
-                <Text className="text-slate-500 mt-2">Sign in to manage your society</Text>
+                <Text style={styles.title}>Welcome Back</Text>
+                <Text style={styles.subtitle}>Sign in to manage your society</Text>
             </View>
 
-            <View className="space-y-4">
+            <View style={styles.formContainer}>
                 <View>
-                    <Text className="text-sm font-medium text-slate-700 mb-1.5">Email Address</Text>
+                    <Text style={styles.label}>Email Address</Text>
                     <Controller
                         control={control}
                         name="email"
                         render={({ field: { onChange, onBlur, value } }) => (
                             <TextInput
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900"
+                                style={styles.input}
                                 placeholder="name@example.com"
                                 placeholderTextColor="#94a3b8"
                                 onBlur={onBlur}
@@ -71,22 +71,98 @@ export default function LoginScreen() {
                         )}
                     />
                     {errors.email && (
-                        <Text className="text-red-500 text-sm mt-1">{errors.email.message}</Text>
+                        <Text style={styles.errorText}>{errors.email.message}</Text>
                     )}
                 </View>
 
                 <TouchableOpacity
                     onPress={handleSubmit(onSubmit)}
                     disabled={sendOtpMutation.isPending}
-                    className={`w-full bg-slate-900 rounded-xl py-4 items-center ${sendOtpMutation.isPending ? 'opacity-70' : ''}`}
+                    style={[styles.button, sendOtpMutation.isPending && styles.buttonDisabled]}
                 >
                     {sendOtpMutation.isPending ? (
                         <ActivityIndicator color="white" />
                     ) : (
-                        <Text className="text-white font-semibold text-base">Send OTP</Text>
+                        <Text style={styles.buttonText}>Send OTP</Text>
                     )}
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+        padding: 24,
+        justifyContent: 'center',
+    },
+    logoContainer: {
+        marginBottom: 40,
+        alignItems: 'center',
+    },
+    logo: {
+        width: 96,
+        height: 96,
+        backgroundColor: '#e2e8f0',
+        borderRadius: 16,
+        marginBottom: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    logoEmoji: {
+        fontSize: 48,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#0f172a',
+        marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#64748b',
+    },
+    formContainer: {
+        gap: 16,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#334155',
+        marginBottom: 6,
+    },
+    input: {
+        width: '100%',
+        backgroundColor: '#f8fafc',
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 16,
+        color: '#0f172a',
+    },
+    errorText: {
+        color: '#ef4444',
+        fontSize: 14,
+        marginTop: 4,
+    },
+    button: {
+        width: '100%',
+        backgroundColor: '#0f172a',
+        borderRadius: 12,
+        paddingVertical: 16,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    buttonDisabled: {
+        opacity: 0.7,
+    },
+    buttonText: {
+        color: '#ffffff',
+        fontWeight: '600',
+        fontSize: 16,
+    },
+});
