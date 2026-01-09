@@ -1,8 +1,13 @@
-const admin = require("../config/firebase");
+const { admin, isInitialized } = require("../config/firebase");
 const pool = require("../config/db");
 
 // Send notification to one user
 async function sendToUser(userId, title, body, data = {}) {
+  if (!isInitialized || !admin) {
+    console.warn("Firebase not initialized - skipping FCM notification");
+    return;
+  }
+
   try {
     const result = await pool.query(
       "SELECT fcm_token FROM users WHERE id = $1 AND fcm_token IS NOT NULL",
@@ -28,6 +33,11 @@ async function sendToUser(userId, title, body, data = {}) {
 
 // Send notification to ALL residents
 async function sendToAllResidents(title, body, data = {}) {
+  if (!isInitialized || !admin) {
+    console.warn("Firebase not initialized - skipping FCM notification");
+    return;
+  }
+
   try {
     const result = await pool.query(
       "SELECT fcm_token FROM users WHERE role = 'resident' AND fcm_token IS NOT NULL"

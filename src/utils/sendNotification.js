@@ -1,5 +1,5 @@
 const pool = require("../config/db");
-const admin = require("../config/firebase");
+const { admin, isInitialized } = require("../config/firebase");
 
 exports.sendNotification = async (userId, title, message, type = "general", req = null) => {
   try {
@@ -19,24 +19,27 @@ exports.sendNotification = async (userId, title, message, type = "general", req 
       }
     }
 
-    const tokenResult = await pool.query(
-      `SELECT fcm_token FROM users WHERE id = $1`,
-      [userId]
-    );
+    // Only attempt FCM if Firebase is initialized
+    if (isInitialized && admin) {
+      const tokenResult = await pool.query(
+        `SELECT fcm_token FROM users WHERE id = $1`,
+        [userId]
+      );
 
-    const fcmToken = tokenResult.rows[0]?.fcm_token;
+      const fcmToken = tokenResult.rows[0]?.fcm_token;
 
-    if (fcmToken) {
-      await admin.messaging().send({
-        token: fcmToken,
-        notification: {
-          title: title,
-          body: message,
-        },
-        data: {
-          type: type
-        }
-      });
+      if (fcmToken) {
+        await admin.messaging().send({
+          token: fcmToken,
+          notification: {
+            title: title,
+            body: message,
+          },
+          data: {
+            type: type
+          }
+        });
+      }
     }
   } catch (err) {
     console.error("sendNotification error:", err);

@@ -1,6 +1,6 @@
 const ffmpeg = require("fluent-ffmpeg");
 const db = require("../config/db");
-const admin = require("../config/firebase");
+const { admin, isInitialized } = require("../config/firebase");
 
 // AI Placeholder: returns fake AI output
 async function runAiOnFrame(imagePath) {
@@ -23,6 +23,11 @@ async function saveEvent(cameraId, snapshotPath, aiData) {
 
 // Send alert to admin if needed
 async function sendAlert(cameraId, aiData) {
+  if (!isInitialized || !admin) {
+    console.warn("Firebase not initialized - skipping AI alert");
+    return;
+  }
+
   if (aiData.person_count > 0 || aiData.motion_level > 0.6) {
     const tokens = await db.query(`
       SELECT fcm_token FROM fcm_tokens 
