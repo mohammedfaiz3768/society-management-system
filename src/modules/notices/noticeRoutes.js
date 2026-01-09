@@ -3,7 +3,7 @@ const router = express.Router();
 
 const {
   createNotice,
-  getNotices,
+  getAllNotices,
   getNoticeById,
   updateNotice,
   deleteNotice,
@@ -14,7 +14,7 @@ const requireRole = require("../../middleware/roleMiddleware");
 
 router.use(authMiddleware);
 
-router.get("/", getNotices);
+router.get("/", getAllNotices);
 router.get("/:id", getNoticeById);
 router.post("/", requireRole("admin"), createNotice);
 router.put("/:id", requireRole("admin"), updateNotice);
