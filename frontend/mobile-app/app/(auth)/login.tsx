@@ -23,7 +23,7 @@ export default function LoginScreen() {
     });
 
     const sendOtpMutation = useMutation({
-        mutationFn: (data: Login FormData) => sendOtp(data),
+        mutationFn: (data: LoginFormData) => sendOtp(data),
         onSuccess: (_, variables) => {
             router.push({
                 pathname: '/(auth)/otp',
