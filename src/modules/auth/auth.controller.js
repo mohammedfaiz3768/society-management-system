@@ -454,6 +454,8 @@ exports.requestOtpByEmail = async (req, res) => {
       [email, otp]
     );
 
+    // DEMO: Log OTP to console since email might not be configured
+    console.log(`[DEMO] OTP for ${email}: ${otp}`);
     console.log(`OTP sent to ${email} (Email delivery simulated)`);
 
     // Send OTP via email
