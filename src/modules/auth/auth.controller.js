@@ -426,11 +426,14 @@ exports.requestOtpByEmail = async (req, res) => {
 
     // Create user if doesn't exist (only in open mode or with valid invitation)
     if (userResult.rows.length === 0) {
+      // Extract name from email (part before @) as default
+      const defaultName = email.split('@')[0].replace(/[._-]/g, ' ');
+
       const newUser = await pool.query(
-        `INSERT INTO users (email, role)
-         VALUES ($1, 'resident')
+        `INSERT INTO users (email, role, name)
+         VALUES ($1, 'resident', $2)
          RETURNING *`,
-        [email]
+        [email, defaultName]
       );
       userResult = newUser;
     }
