@@ -12,7 +12,7 @@ function generateInvitationCode() {
 }
 
 // Create invitation
-exports.sendInvitation = async (req, res) => {
+exports.createInvitation = async (req, res) => {
     const { email, role } = req.body;
     const invitedBy = req.user.id;
     const societyId = req.societyId;
