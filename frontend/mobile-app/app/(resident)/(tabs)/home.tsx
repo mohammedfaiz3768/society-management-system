@@ -103,7 +103,12 @@ export default function HomeScreen() {
                 <Text className="text-white/70 text-sm mt-1">{(user as any)?.block || 'A'} - {user?.flat_number || '101'}</Text>
             </LinearGradient>
 
-            <ScrollView className="flex-1 -mt-4" showsVerticalScrollIndicator={false}>
+            {/* FIXED: Add contentContainerStyle for proper ScrollView layout */}
+            <ScrollView
+                className="flex-1 -mt-4"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
+            >
                 {/* Stats Cards */}
                 <View className="px-6 mb-6">
                     <View className="flex-row gap-3">
@@ -133,24 +138,44 @@ export default function HomeScreen() {
                     </View>
                 </View>
 
+                {/* Emergency SOS Card */}
+                <View className="px-6 mb-6">
+                    <TouchableOpacity
+                        onPress={handleSOS}
+                        className="bg-red-500 rounded-2xl p-6 shadow-lg"
+                    >
+                        <View className="flex-row items-center">
+                            <View className="w-14 h-14 bg-white/20 rounded-full items-center justify-center mr-4">
+                                <Ionicons name="alert-circle" size={32} color="white" />
+                            </View>
+                            <View className="flex-1">
+                                <Text className="text-white text-xl font-bold mb-1">Emergency SOS</Text>
+                                <Text className="text-white/80 text-sm">Tap for immediate assistance</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Quick Actions */}
                 <View className="px-6 mb-6">
                     <Text className="text-gray-900 text-lg font-bold mb-4">Quick Actions</Text>
-                    <View className="flex-row flex-wrap gap-3">
+                    {/* FIXED: Use flex-row flex-wrap instead of grid */}
+                    <View className="flex-row flex-wrap -mx-1.5">
                         {quickActions.map((action) => (
-                            <TouchableOpacity
-                                key={action.name}
-                                onPress={() => router.push(action.route as any)}
-                                className="w-[48%] bg-white rounded-2xl p-4 shadow-sm"
-                            >
-                                <View
-                                    className="w-12 h-12 rounded-xl items-center justify-center mb-3"
-                                    style={{ backgroundColor: `${action.color}15` }}
+                            <View key={action.name} className="w-1/2 px-1.5 mb-3">
+                                <TouchableOpacity
+                                    onPress={() => router.push(action.route as any)}
+                                    className="bg-white rounded-2xl p-4 shadow-sm"
                                 >
-                                    <Ionicons name={action.icon as any} size={24} color={action.color} />
-                                </View>
-                                <Text className="text-gray-900 font-semibold text-base">{action.name}</Text>
-                            </TouchableOpacity>
+                                    <View
+                                        className="w-12 h-12 rounded-xl items-center justify-center mb-3"
+                                        style={{ backgroundColor: `${action.color}15` }}
+                                    >
+                                        <Ionicons name={action.icon as any} size={24} color={action.color} />
+                                    </View>
+                                    <Text className="text-gray-900 font-semibold text-base">{action.name}</Text>
+                                </TouchableOpacity>
+                            </View>
                         ))}
                     </View>
                 </View>
@@ -168,19 +193,9 @@ export default function HomeScreen() {
                         <Text className="text-gray-500 text-center py-4">No announcements yet</Text>
                     </View>
                 </View>
-
-                {/* Spacer for floating button */}
-                <View className="h-24" />
             </ScrollView>
 
-            {/* Floating SOS Button */}
-            <TouchableOpacity
-                onPress={handleSOS}
-                className="absolute bottom-8 right-6 w-16 h-16 rounded-full items-center justify-center shadow-lg"
-                style={{ backgroundColor: '#EF4444' }}
-            >
-                <Ionicons name="alert-circle" size={32} color="white" />
-            </TouchableOpacity>
+            {/* Floating SOS Button - Removed since we have card now */}
         </SafeAreaView>
     );
 }
