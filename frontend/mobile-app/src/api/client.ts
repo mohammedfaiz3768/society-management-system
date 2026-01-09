@@ -11,7 +11,7 @@ import * as SecureStore from 'expo-secure-store';
  */
 
 // Base URL from environment (fallback to localhost for dev)
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.5:5000/api';
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.5:5000/api';
 
 // Create axios instance
 export const apiClient = axios.create({
