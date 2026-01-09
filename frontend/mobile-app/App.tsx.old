@@ -1,0 +1,45 @@
+import './global.css';
+import React, { useEffect } from 'react';
+
+import { View, ActivityIndicator } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'; // Import React Query Provider
+import { useAuthStore } from './src/store/authStore';
+import LoginScreen from './src/screens/LoginScreen';
+import MainNavigator from './src/navigation/MainNavigator';
+import { StatusBar } from 'expo-status-bar';
+
+const Stack = createNativeStackNavigator();
+const queryClient = new QueryClient(); // Create Client
+
+export default function App() {
+  const { token, isLoading, loadUser } = useAuthStore();
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-white justify-center items-center">
+        <ActivityIndicator size="large" color="#2563EB" />
+      </View>
+    );
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <NavigationContainer>
+        <StatusBar style="dark" />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {token ? (
+            <Stack.Screen name="Main" component={MainNavigator} />
+          ) : (
+            <Stack.Screen name="Login" component={LoginScreen} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </QueryClientProvider>
+  );
+}

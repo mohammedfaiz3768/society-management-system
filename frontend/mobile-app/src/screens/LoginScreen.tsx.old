@@ -1,0 +1,103 @@
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useAuthStore } from '../store/authStore';
+
+export default function LoginScreen() {
+    const [email, setEmail] = useState('');
+    const [otp, setOtp] = useState('');
+    const [step, setStep] = useState<'email' | 'otp'>('email');
+    const [loading, setLoading] = useState(false);
+
+    const { requestOtpByEmail, loginWithEmail } = useAuthStore();
+
+    const handleRequestOtp = async () => {
+        if (!email || !email.includes('@')) {
+            Alert.alert("Invalid Email", "Please enter a valid email address.");
+            return;
+        }
+        setLoading(true);
+        try {
+            await requestOtpByEmail(email);
+            setStep('otp');
+            Alert.alert("OTP Sent", "Check your email for the OTP code.");
+        } catch (error: any) {
+            Alert.alert("Error", error.response?.data?.message || "Failed to send OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogin = async () => {
+        if (otp.length < 4) {
+            Alert.alert("Invalid OTP", "Please enter valid OTP.");
+            return;
+        }
+        setLoading(true);
+        try {
+            await loginWithEmail(email, otp);
+        } catch (error: any) {
+            Alert.alert("Login Failed", error.message || "Invalid OTP");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-white justify-center px-6">
+            <View className="mb-10">
+                <Text className="text-4xl font-bold text-gray-900 mb-2">
+                    {step === 'email' ? 'Welcome Back' : 'Verify OTP'}
+                </Text>
+                <Text className="text-gray-500 text-lg">
+                    {step === 'email' ? 'Login to your society account.' : `Sent to ${email}`}
+                </Text>
+            </View>
+
+            <View className="space-y-4">
+                {step === 'email' ? (
+                    <TextInput
+                        className="bg-gray-100 text-gray-900 p-4 rounded-xl text-lg border border-gray-200"
+                        placeholder="Email Address"
+                        placeholderTextColor="#9CA3AF"
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        value={email}
+                        onChangeText={setEmail}
+                        autoFocus
+                    />
+                ) : (
+                    <TextInput
+                        className="bg-gray-100 text-gray-900 p-4 rounded-xl text-lg border border-gray-200"
+                        placeholder="Enter OTP"
+                        placeholderTextColor="#9CA3AF"
+                        keyboardType="number-pad"
+                        value={otp}
+                        onChangeText={setOtp}
+                        maxLength={6}
+                        autoFocus
+                    />
+                )}
+
+                <TouchableOpacity
+                    className="bg-blue-600 p-4 rounded-xl items-center mt-4 active:bg-blue-700"
+                    onPress={step === 'email' ? handleRequestOtp : handleLogin}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="white" />
+                    ) : (
+                        <Text className="text-white font-bold text-lg">
+                            {step === 'email' ? 'Send OTP' : 'Verify & Login'}
+                        </Text>
+                    )}
+                </TouchableOpacity>
+
+                {step === 'otp' && (
+                    <TouchableOpacity onPress={() => setStep('email')} className="mt-4 items-center">
+                        <Text className="text-gray-500">Change Email Address</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+        </KeyboardAvoidingView>
+    );
+}

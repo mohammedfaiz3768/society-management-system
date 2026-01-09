@@ -1,0 +1,71 @@
+import { apiClient } from '../client';
+import { z } from 'zod';
+
+/**
+ * Auth API
+ * Handles OTP-based authentication flow
+ */
+
+// Schemas
+export const SendOtpSchema = z.object({
+    email: z.string().email(),
+});
+
+export const VerifyOtpSchema = z.object({
+    email: z.string().email(),
+    code: z.string().length(6),
+});
+
+export const AuthResponseSchema = z.object({
+    token: z.string(),
+    user: z.object({
+        id: z.number(), // Backend uses integer IDs
+        email: z.string().email(),
+        role: z.enum(['resident', 'guard', 'admin']),
+        name: z.string().optional(),
+        phone: z.string().optional(),
+        flat_number: z.string().optional(),
+    }),
+});
+
+// Types
+export type SendOtpPayload = z.infer<typeof SendOtpSchema>;
+export type VerifyOtpPayload = z.infer<typeof VerifyOtpSchema>;
+export type AuthResponse = z.infer<typeof AuthResponseSchema>;
+export type User = AuthResponse['user'];
+
+/**
+ * Send OTP to email
+ */
+export async function sendOtp(data: SendOtpPayload): Promise<{ message: string }> {
+    const validated = SendOtpSchema.parse(data);
+    const response = await apiClient.post<{ message: string }>('/auth/request-otp-email', validated);
+    return response.data;
+}
+
+/**
+ * Verify OTP and get JWT token
+ */
+export async function verifyOtp(data: VerifyOtpPayload): Promise<AuthResponse> {
+    // data.otp comes from form, backend expects 'code'
+    const payload = { email: data.email, code: data.code };
+
+    try {
+        const validated = VerifyOtpSchema.parse(payload);
+        const response = await apiClient.post<AuthResponse>('/auth/verify-otp-email', validated);
+        return AuthResponseSchema.parse(response.data);
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            throw new Error('Please enter a valid 6-digit code');
+        }
+        throw error;
+    }
+}
+
+/**
+ * Get current user profile
+ */
+export async function getCurrentUser() {
+    const response = await apiClient.get('/auth/me');
+    return AuthResponseSchema.shape.user.parse(response.data.user);
+}
