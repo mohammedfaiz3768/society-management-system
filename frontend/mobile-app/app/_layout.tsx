@@ -4,6 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { useAuthStore } from '../src/store/authStore';
+
+// CRITICAL: Import global CSS for NativeWind
 import "../global.css";
 
 import { registerForPushNotificationsAsync } from '../src/utils/notifications';
