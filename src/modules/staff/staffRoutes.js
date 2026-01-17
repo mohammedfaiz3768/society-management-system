@@ -22,15 +22,13 @@ const {
 
 const auth = require("../../middleware/authMiddleware");
 const requireRole = require("../../middleware/roleMiddleware");
-const { demoModeGuard } = require("../../middleware/demoMode");
 
 router.use(auth);
 
 router.post("/", requireRole("admin"), addStaff);
 router.get("/", requireRole("admin"), getAllStaff);
 router.put("/:id", requireRole("admin"), updateStaff);
-// Protect destructive DELETE operation in demo mode
-router.delete("/:id", requireRole("admin"), demoModeGuard, deleteStaff);
+router.delete("/:id", requireRole("admin"), deleteStaff);
 router.post("/check-in", requireRole("admin", "guard"), staffCheckIn);
 router.post("/check-out", requireRole("admin", "guard"), staffCheckOut);
 router.get("/attendance/:staff_id", requireRole("admin"), getStaffAttendance);

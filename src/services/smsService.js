@@ -1,12 +1,6 @@
 const axios = require("axios");
-const { shouldSkipSMS, sendDemoNotification } = require("../middleware/demoMode");
 
 async function sendSMS(phone, message) {
-  // Check if we should skip real SMS in demo mode
-  if (shouldSkipSMS()) {
-    sendDemoNotification('sms', phone, { message });
-    return true; // Return success in demo mode
-  }
 
   try {
     const apiKey = process.env.SMS_API_KEY;   // your SMS provider API key

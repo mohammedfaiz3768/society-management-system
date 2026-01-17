@@ -1,5 +1,4 @@
 const nodemailer = require("nodemailer");
-const { shouldSkipEmail, sendDemoNotification } = require("../middleware/demoMode");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
@@ -11,11 +10,6 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.sendEmail = async ({ to, subject, html }) => {
-    // Check if we should skip real email in demo mode
-    if (shouldSkipEmail()) {
-        sendDemoNotification('email', to, { subject, html });
-        return true; // Return success in demo mode
-    }
 
     try {
         const info = await transporter.sendMail({

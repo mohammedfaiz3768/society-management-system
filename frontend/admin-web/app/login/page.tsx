@@ -48,19 +48,23 @@ export default function LoginPage() {
             const res = await api.post('/auth/admin-verify-otp', { email, otp });
 
             if (res.data && res.data.token) {
-                // Store token
+                // Store token AND user (required by AuthProvider)
                 localStorage.setItem('admin_token', res.data.token);
+                localStorage.setItem('admin_user', JSON.stringify(res.data.user));
 
-                // Check if first login
-                if (res.data.user.is_first_login) {
-                    // Redirect to society setup
-                    router.push('/setup-society');
-                } else {
-                    // Redirect to dashboard
-                    router.push('/dashboard');
-                }
+                // Wait a bit to ensure localStorage is committed before redirect
+                setTimeout(() => {
+                    if (res.data.user.is_first_login) {
+                        window.location.href = '/setup-society';
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
+                }, 200);
+            } else {
+                setError("Login failed: No token received");
             }
         } catch (err: any) {
+            console.error('OTP verification error:', err);
             setError(err.response?.data?.message || "Invalid OTP. Please try again.");
         } finally {
             setIsLoading(false);

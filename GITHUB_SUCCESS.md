@@ -13,7 +13,7 @@
 society-management-system/
 ├── src/                    # Backend API (Node.js + Express)
 │   ├── modules/           # 17 feature modules
-│   ├── middleware/        # Auth, demo mode, roles
+│   ├── middleware/        # Auth, roles
 │   ├── config/            # Database, Firebase, Razorpay
 │   └── utils/             # Email, SMS, notifications
 ├── frontend/
@@ -180,7 +180,6 @@ All documentation is included in the repository:
 
 **Provider:** Neon PostgreSQL (Cloud)
 **Tables:** 23
-**Seeded Data:** Demo society with admin, residents, guard
 
 ## ⚠️ Important Notes
 

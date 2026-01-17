@@ -34,12 +34,21 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 3. OTP codes table
+-- 3. OTP codes table (for mobile/email login)
 CREATE TABLE IF NOT EXISTS otp_codes (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255),
     phone VARCHAR(20),
     code VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 3.1. OTPs table (for admin login and password changes)
+CREATE TABLE IF NOT EXISTS otps (
+    id SERIAL PRIMARY KEY,
+    identifier VARCHAR(255) UNIQUE NOT NULL,
+    otp_code VARCHAR(6) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -185,14 +194,19 @@ CREATE TABLE IF NOT EXISTS documents (
 );
 
 -- 15. Maintenance bills table
-CREATE TABLE IF NOT EXISTS maintenance_bills (
+    CREATE TABLE IF NOT EXISTS maintenance_bills (
     id SERIAL PRIMARY KEY,
     society_id INTEGER REFERENCES societies(id),
+    user_id INTEGER REFERENCES users(id),
     flat_number VARCHAR(20) NOT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     month VARCHAR(50),
+    year INTEGER,
     due_date DATE,
+    paid_date DATE,
+    notes TEXT,
     status VARCHAR(50) DEFAULT 'pending',
+    updated_at TIMESTAMP DEFAULT NOW(),
     created_at TIMESTAMP DEFAULT NOW()
 );
 

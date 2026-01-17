@@ -454,9 +454,7 @@ exports.requestOtpByEmail = async (req, res) => {
       [email, otp]
     );
 
-    // DEMO: Log OTP to console since email might not be configured
-    console.log(`[DEMO] OTP for ${email}: ${otp}`);
-    console.log(`OTP sent to ${email} (Email delivery simulated)`);
+
 
     // Try to send OTP via email (optional - don't fail if email service is down)
     try {
@@ -706,13 +704,14 @@ exports.requestPasswordChangeOtp = async (req, res) => {
       [user.email, otp, expiresAt]
     );
 
-    // Send OTP email
-    const sendEmail = require("../../utils/sendEmail");
-    await sendEmail(
-      user.email,
-      "Password Change OTP",
-      `Your OTP to update password is: ${otp}. Valid for 10 minutes.`
-    );
+    // Log OTP to console (for development/testing)
+    console.log('\n═══════════════════════════════════════════');
+    console.log('📧 PASSWORD CHANGE OTP');
+    console.log('═══════════════════════════════════════════');
+    console.log(`Email: ${user.email}`);
+    console.log(`OTP Code: ${otp}`);
+    console.log(`Expires: ${expiresAt}`);
+    console.log('═══════════════════════════════════════════\n');
 
     await logActivity({
       userId: user.id,
@@ -827,13 +826,14 @@ exports.adminRequestOtp = async (req, res) => {
       [email, otp, expiresAt]
     );
 
-    // Send OTP email
-    const sendEmail = require("../../utils/sendEmail");
-    await sendEmail(
-      email,
-      "Admin Login OTP",
-      `Your OTP for admin login is: ${otp}. Valid for 10 minutes.`
-    );
+    // Log OTP to console (for development/testing)
+    console.log('\n═══════════════════════════════════════════');
+    console.log('🔐 ADMIN LOGIN OTP');
+    console.log('═══════════════════════════════════════════');
+    console.log(`Email: ${email}`);
+    console.log(`OTP Code: ${otp}`);
+    console.log(`Expires: ${expiresAt}`);
+    console.log('═══════════════════════════════════════════\n');
 
     await logActivity({
       userId: user.id,

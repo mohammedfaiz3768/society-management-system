@@ -35,7 +35,6 @@ export default function GatePassScreen() {
 
     const handleCreate = () => {
         if (!visitorName) { Alert.alert("Missing Name"); return; }
-        // Create validUntil (24 hours from now for demo)
         const validUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
         mutation.mutate({ visitorName, type, validUntil });
     };

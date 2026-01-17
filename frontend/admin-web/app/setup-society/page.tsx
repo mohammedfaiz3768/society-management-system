@@ -36,11 +36,11 @@ export default function SetupSocietyPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-900 to-cyan-700 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-linear-gradient-to-br from-teal-900 to-cyan-700 px-4">
             <Card className="w-full max-w-lg shadow-2xl">
                 <CardHeader className="space-y-1">
                     <div className="flex items-center justify-center mb-4">
-                        <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
+                        <div className="w-16 h-16 bg-linear-gradient-to-br from-teal-500 to-cyan-500 rounded-full flex items-center justify-center">
                             <Building2 className="w-8 h-8 text-white" />
                         </div>
                     </div>

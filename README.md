@@ -90,15 +90,7 @@ npm start
 # Scan QR code with Expo Go app
 ```
 
-## 🔐 Demo Credentials
-
-After running `npm run db:setup`:
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@greenwood.com | admin123 |
-| Resident | rajesh@example.com | password123 |
-| Guard | guard@greenwood.com | guard123 |
+```
 
 ## 🎯 Features
 
@@ -185,9 +177,7 @@ After running `npm run db:setup`:
 ```bash
 npm run dev          # Start development server
 npm run start        # Start production server
-npm run db:setup     # Initialize database with schema and seed data
-npm run migrate      # Run migrations only
-npm run seed         # Seed demo data only
+npm run db:setup     # Initialize database with schema
 ```
 
 ### Admin Web
@@ -230,7 +220,6 @@ npm run web          # Run in browser
 - ✅ Bcrypt password hashing
 - ✅ SSL database connections
 - ✅ Environment-based configuration
-- ✅ Demo mode safety guards
 - ✅ CORS protection
 - ✅ Input validation
 
