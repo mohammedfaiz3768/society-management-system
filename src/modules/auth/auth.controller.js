@@ -456,12 +456,15 @@ exports.requestOtpByEmail = async (req, res) => {
 
 
 
-    // Try to send OTP via email (optional - don't fail if email service is down)
-    try {
-      await sendEmail(email, "Your Login OTP", otp);
-    } catch (emailError) {
-      console.log('Email send failed (optional):', emailError.message);
-    }
+    // Log OTP for production debugging (since email is failing)
+    console.log('----------------------------------------');
+    console.log('🔐 EMAIL OTP:', otp);
+    console.log('----------------------------------------');
+
+    // Try to send OTP via email (non-blocking to prevent timeouts)
+    sendEmail(email, "Your Login OTP", otp).catch(emailError => {
+      console.log('Email send failed (background):', emailError.message);
+    });
 
     // Log activity (optional - don't fail if this errors)
     try {
