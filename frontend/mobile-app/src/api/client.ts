@@ -13,6 +13,11 @@ import * as SecureStore from 'expo-secure-store';
 // Base URL from environment (fallback to localhost for dev)
 const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.5:5000/api';
 
+console.log('----------------------------------------');
+console.log('MOBILE APP CONFIG:');
+console.log('BASE_URL:', BASE_URL);
+console.log('----------------------------------------');
+
 // Create axios instance
 export const apiClient = axios.create({
     baseURL: BASE_URL,
@@ -76,6 +81,8 @@ apiClient.interceptors.response.use(
         // Handle network errors
         if (!error.response) {
             console.error('Network error - no response from server');
+            console.error('Request URL:', error.config?.url);
+            console.error('Error Details:', error.message);
             // TODO: Show toast notification
         }
 
