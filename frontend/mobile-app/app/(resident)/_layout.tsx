@@ -9,12 +9,22 @@ export default function ResidentLayout() {
                 headerShown: false,
                 tabBarActiveTintColor: '#0f172a', // slate-900
                 tabBarInactiveTintColor: '#94a3b8', // slate-400
+                tabBarLabelStyle: {
+                    fontSize: 12,
+                    fontWeight: '600',
+                    marginBottom: 5,
+                },
                 tabBarStyle: {
-                    borderTopWidth: 1,
-                    borderTopColor: '#e2e8f0',
-                    height: 60,
-                    paddingBottom: 8,
-                    paddingTop: 8,
+                    borderTopWidth: 0,
+                    backgroundColor: '#ffffff',
+                    height: 70, // Premium height
+                    paddingBottom: 10,
+                    paddingTop: 10,
+                    elevation: 20, // Stronger shadow for floating feel
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -4 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
                 },
             }}
         >

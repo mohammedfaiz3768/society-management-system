@@ -34,7 +34,11 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
         try {
-            const token = await SecureStore.getItemAsync('sms_auth_token');
+            // FIX: Access token directly from AuthStore state instead of raw SecureStore
+            // The store handles persistence/hydration, so getState().token should be populated
+            // if the store has finished rehydrating.
+            const { useAuthStore } = require('../store/authStore');
+            const token = useAuthStore.getState().token;
 
             if (token && config.headers) {
                 config.headers.Authorization = `Bearer ${token}`;
@@ -81,9 +85,20 @@ apiClient.interceptors.response.use(
         // Handle network errors
         if (!error.response) {
             console.error('Network error - no response from server');
-            console.error('Request URL:', error.config?.url);
+            const fullUrl = `${error.config?.baseURL || ''}${error.config?.url || ''}`;
+            console.error('Full Request URL:', fullUrl);
             console.error('Error Details:', error.message);
-            // TODO: Show toast notification
+        }
+
+        // Handle 401 Unauthorized (Session Expired)
+        if (error.response?.status === 401) {
+            console.warn('Unauthorized - session expired. Logging out...');
+            // Avoid circular dependency by dynamically importing or accessing store directly if possible
+            // But since this is a client file, we can't easily use hooks.
+            // We'll dispatch a custom event or use the store's static method if available.
+            // Ideally, we import the store.
+            const { useAuthStore } = require('../store/authStore');
+            useAuthStore.getState().logout();
         }
 
         // Standardized error object

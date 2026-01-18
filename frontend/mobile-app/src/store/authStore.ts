@@ -19,12 +19,16 @@ interface AuthState {
 
 const secureStorage = {
     getItem: async (name: string): Promise<string | null> => {
-        return await SecureStore.getItemAsync(name);
+        const value = await SecureStore.getItemAsync(name);
+        console.log(`[AuthStore] getItem ${name}:`, value ? 'EXISTS' : 'NULL');
+        return value;
     },
     setItem: async (name: string, value: string): Promise<void> => {
+        console.log(`[AuthStore] setItem ${name}`);
         await SecureStore.setItemAsync(name, value);
     },
     removeItem: async (name: string): Promise<void> => {
+        console.log(`[AuthStore] removeItem ${name}`);
         await SecureStore.deleteItemAsync(name);
     },
 };
@@ -37,13 +41,17 @@ export const useAuthStore = create<AuthState>()(
             userRole: null,
             societyId: null,
             isLoading: false,
-            login: (token, user) => set({
-                token,
-                user,
-                userRole: user.role,
-                societyId: user.societyId || null
-            }),
+            login: (token, user) => {
+                console.log('[AuthStore] LOGIN action called', user.role);
+                set({
+                    token,
+                    user,
+                    userRole: user.role,
+                    societyId: user.societyId || null
+                });
+            },
             logout: () => {
+                console.log('[AuthStore] LOGOUT action called');
                 set({ token: null, user: null, userRole: null, societyId: null });
                 // Optional: clear router or navigate to auth
             },

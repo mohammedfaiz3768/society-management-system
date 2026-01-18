@@ -47,16 +47,22 @@ export default function RootLayout() {
     */
 
     useEffect(() => {
+        console.log('[RootLayout] Effect triggered', { isLoading, hasToken: !!token, role: userRole, segment: segments[0] });
+
         if (isLoading) return;
 
         const inAuthGroup = segments[0] === '(auth)';
 
         // Use setTimeout to ensure router is mounted
         const navigationTimeout = setTimeout(() => {
+            console.log('[RootLayout] Navigation check:', { hasToken: !!token, inAuthGroup });
+
             if (!token && !inAuthGroup) {
+                console.log('[RootLayout] Redirecting to Login');
                 // Redirect to login if not authenticated
                 router.replace('/(auth)/login');
             } else if (token && inAuthGroup) {
+                console.log('[RootLayout] Redirecting to Dashboard for role:', userRole);
                 // Redirect to appropriate dashboard if already authenticated
                 if (userRole === 'resident') {
                     router.replace('/(resident)/(tabs)/home');
