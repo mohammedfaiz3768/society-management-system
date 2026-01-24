@@ -29,7 +29,7 @@ exports.createGatePass = async (req, res) => {
       entityType: "gatepass",
       entityId: gatePass.id,
       title: "Gate Pass Created",
-      description: `Pass for ${guestName} (${type})`
+      description: `Pass for ${visitor_name}`
     });
 
     res.status(201).json(gatePass);
