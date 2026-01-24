@@ -12,13 +12,13 @@ exports.createGatePass = async (req, res) => {
   }
 
   try {
-    const pass_code = Math.floor(100000 + Math.random() * 900000).toString();
+    const qr_code = Math.floor(100000 + Math.random() * 900000).toString();
 
     const result = await pool.query(
-      `INSERT INTO gate_passes (user_id, visitor_name, visitor_phone, vehicle_number, purpose, pass_code, valid_until, society_id)
+      `INSERT INTO gate_passes (user_id, visitor_name, visitor_phone, vehicle_number, purpose, qr_code, valid_until, society_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [userId, visitor_name, visitor_phone || "", vehicle_number || "", purpose || "", pass_code, valid_until || null, societyId]
+      [userId, visitor_name, visitor_phone || "", vehicle_number || "", purpose || "", qr_code, valid_until || null, societyId]
     );
 
     const gatePass = result.rows[0];

@@ -93,8 +93,7 @@ exports.updateComplaint = async (req, res) => {
     const updated = await pool.query(
       `UPDATE complaints
        SET status = $1,
-           admin_comment = $2,
-           updated_at = NOW()
+           admin_comment = $2
        WHERE id = $3
        RETURNING *`,
       [
