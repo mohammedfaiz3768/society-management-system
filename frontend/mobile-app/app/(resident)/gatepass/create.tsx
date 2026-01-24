@@ -29,23 +29,24 @@ export default function CreateGatePassScreen() {
     const { control, handleSubmit, formState: { errors } } = useForm<CreateGatePass>({
         resolver: zodResolver(CreateGatePassSchema) as any,
         defaultValues: {
+            guestName: '',
+            guestPhone: '',
             type: 'Visitor',
             validFrom: new Date(),
             validTo: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+            vehicleNumber: '',
+            purpose: '',
         },
     });
 
     const onSubmit = async (data: CreateGatePass) => {
         try {
-            await createMutation.mutateAsync({
+            const result = await createMutation.mutateAsync({
                 ...data,
                 type: selectedType,
             });
-            Alert.alert(
-                'Success',
-                'Gate pass created! It will be active once approved by the guard.',
-                [{ text: 'OK', onPress: () => router.back() }]
-            );
+            // Navigate to the gate pass details to show QR code
+            router.replace(`/gatepass/${result.id}`);
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to create gate pass');
         }

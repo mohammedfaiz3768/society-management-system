@@ -12,31 +12,12 @@ import type { GatePass } from '../../../src/api/gatepass/gatepass.schema';
  * 1. List active gate passes
  * 2. Create new pass (navigates to form)
  * 3. View QR code (navigates to detail)
- * 4. Status badges (PENDING, APPROVED, etc.)
+ * 4. Used badge display
  */
 
 export default function ResidentGateScreen() {
     const router = useRouter();
     const { data: gatePasses, isLoading, error, refetch } = useGatePassList();
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'APPROVED':
-                return 'bg-green-100 text-green-800';
-            case 'PENDING':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'ENTERED':
-                return 'bg-blue-100 text-blue-800';
-            case 'EXITED':
-                return 'bg-gray-100 text-gray-800';
-            case 'EXPIRED':
-                return 'bg-red-100 text-red-800';
-            case 'REJECTED':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
 
     const renderGatePass = ({ item }: { item: GatePass }) => (
         <TouchableOpacity
@@ -45,23 +26,21 @@ export default function ResidentGateScreen() {
         >
             <View className="flex-row justify-between items-start mb-2">
                 <View className="flex-1">
-                    <Text className="text-lg font-semibold text-slate-900">{item.guest_name}</Text>
-                    <Text className="text-sm text-slate-500">{item.guest_phone}</Text>
+                    <Text className="text-lg font-semibold text-slate-900">{item.visitor_name}</Text>
+                    <Text className="text-sm text-slate-500">{item.visitor_phone}</Text>
                 </View>
-                <View className={`px-3 py-1 rounded-full ${getStatusColor(item.status)}`}>
-                    <Text className="text-xs font-medium">{item.status}</Text>
-                </View>
+                {item.used && (
+                    <View className="px-3 py-1 rounded-full bg-blue-100">
+                        <Text className="text-xs font-medium text-blue-800">Used</Text>
+                    </View>
+                )}
             </View>
 
             <View className="flex-row items-center gap-4 mt-2">
                 <View className="flex-row items-center">
-                    <Text className="text-xs text-slate-400 mr-1">Type:</Text>
-                    <Text className="text-xs font-medium text-slate-700">{item.type}</Text>
-                </View>
-                <View className="flex-row items-center">
-                    <Text className="text-xs text-slate-400 mr-1">Valid:</Text>
+                    <Text className="text-xs text-slate-400 mr-1">Valid Until:</Text>
                     <Text className="text-xs font-medium text-slate-700">
-                        {new Date(item.valid_from).toLocaleDateString()}
+                        {new Date(item.valid_until).toLocaleDateString()}
                     </Text>
                 </View>
             </View>

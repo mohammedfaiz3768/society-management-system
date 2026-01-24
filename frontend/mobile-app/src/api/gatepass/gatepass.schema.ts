@@ -24,22 +24,17 @@ export const GatePassStatusEnum = z.enum([
 
 // Full Gate Pass Entity (from backend)
 export const GatePassSchema = z.object({
-    id: z.number(), // Backend uses integer IDs
-    guest_name: z.string().min(1, 'Guest name is required'), // backend returns snake_case
-    guest_phone: z.string().regex(/^\d{10}$/, 'Invalid phone number').nullable().optional(),
-    type: z.string(), // Backend returns string
-    status: z.string(), // Backend returns string
-    valid_from: z.string(), // Backend returns ISO string
-    valid_to: z.string(),
-    qr_code: z.string().optional(),
+    id: z.number(),
+    society_id: z.number().optional(),
     user_id: z.number(),
+    visitor_name: z.string().min(1, 'Visitor name is required'),
+    visitor_phone: z.string().nullable().optional(),
     vehicle_number: z.string().nullable().optional(),
     purpose: z.string().nullable().optional(),
+    qr_code: z.string(),
+    valid_until: z.string(), // Database has valid_until, not valid_from/valid_to
+    used: z.boolean().optional(),
     created_at: z.string(),
-    updated_at: z.string(),
-    entry_time: z.string().nullable().optional(),
-    exit_time: z.string().nullable().optional(),
-    guard_id: z.number().nullable().optional(),
 });
 
 // Client-side creation schema (omit system-generated fields)
