@@ -16,6 +16,7 @@ const pool = new Pool({
 // Migration files in order (base schema must run first)
 const migrations = [
     '00_base_schema.sql',          // Creates all base tables
+    '01_add_notifications_table.sql', // Adds notifications table
     'add_multi_tenant_schema.sql',  // Adds columns (will skip if exists)
     'add_society_registration.sql', // Adds registration fields
     'add_email_to_otp_codes.sql',  // Adds email to OTP

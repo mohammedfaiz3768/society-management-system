@@ -21,8 +21,11 @@ export default function GatePassDetailScreen() {
     const router = useRouter();
     const [shouldPoll, setShouldPoll] = useState(true);
 
-    const { data: gatePass, isLoading, error } = useGatePassDetail(id, {
-        enabled: !!id,
+    // Parse id to number and validate
+    const gatePassId = id ? parseInt(id, 10) : undefined;
+
+    const { data: gatePass, isLoading, error } = useGatePassDetail(gatePassId, {
+        enabled: !!gatePassId && !isNaN(gatePassId),
         pollingInterval: shouldPoll ? 5000 : undefined, // Poll every 5s for status updates
     });
 
@@ -104,7 +107,7 @@ export default function GatePassDetailScreen() {
                 {gatePass.status === 'APPROVED' && (
                     <View className="bg-white rounded-xl p-6 items-center mb-6 shadow-sm">
                         <Text className="text-sm font-medium text-slate-500 mb-4">SCAN THIS QR</Text>
-                        <QRCode value={gatePass.qrCode} size={200} />
+                        <QRCode value={gatePass.qr_code} size={200} />
                         <Text className="text-xs text-slate-400 mt-4">Show this to the guard</Text>
                     </View>
                 )}
@@ -116,12 +119,12 @@ export default function GatePassDetailScreen() {
                     <View className="space-y-3">
                         <View className="flex-row justify-between py-2 border-b border-slate-100">
                             <Text className="text-slate-600">Name</Text>
-                            <Text className="font-medium text-slate-900">{gatePass.guestName}</Text>
+                            <Text className="font-medium text-slate-900">{gatePass.guest_name}</Text>
                         </View>
 
                         <View className="flex-row justify-between py-2 border-b border-slate-100">
                             <Text className="text-slate-600">Phone</Text>
-                            <Text className="font-medium text-slate-900">{gatePass.guestPhone}</Text>
+                            <Text className="font-medium text-slate-900">{gatePass.guest_phone}</Text>
                         </View>
 
                         <View className="flex-row justify-between py-2 border-b border-slate-100">
@@ -129,43 +132,43 @@ export default function GatePassDetailScreen() {
                             <Text className="font-medium text-slate-900">{gatePass.type}</Text>
                         </View>
 
-                        {gatePass.vehicleNumber && (
+                        {gatePass.vehicle_number && (
                             <View className="flex-row justify-between py-2 border-b border-slate-100">
                                 <Text className="text-slate-600">Vehicle</Text>
-                                <Text className="font-medium text-slate-900">{gatePass.vehicleNumber}</Text>
+                                <Text className="font-medium text-slate-900">{gatePass.vehicle_number}</Text>
                             </View>
                         )}
 
                         <View className="flex-row justify-between py-2">
                             <Text className="text-slate-600">Valid Until</Text>
                             <Text className="font-medium text-slate-900">
-                                {new Date(gatePass.validTo).toLocaleDateString()}
+                                {new Date(gatePass.valid_to).toLocaleDateString()}
                             </Text>
                         </View>
                     </View>
                 </View>
 
                 {/* Entry/Exit Timestamps */}
-                {(gatePass.entryTime || gatePass.exitTime) && (
+                {(gatePass.entry_time || gatePass.exit_time) && (
                     <View className="bg-white rounded-xl p-4">
                         <Text className="text-xs font-semibold text-slate-500 uppercase mb-3">Activity Log</Text>
 
-                        {gatePass.entryTime && (
+                        {gatePass.entry_time && (
                             <View className="flex-row items-center py-2">
                                 <Text className="text-green-600 mr-2">→</Text>
                                 <Text className="text-slate-600">Entry: </Text>
                                 <Text className="font-medium text-slate-900">
-                                    {new Date(gatePass.entryTime).toLocaleString()}
+                                    {new Date(gatePass.entry_time).toLocaleString()}
                                 </Text>
                             </View>
                         )}
 
-                        {gatePass.exitTime && (
+                        {gatePass.exit_time && (
                             <View className="flex-row items-center py-2">
                                 <Text className="text-red-600 mr-2">←</Text>
                                 <Text className="text-slate-600">Exit: </Text>
                                 <Text className="font-medium text-slate-900">
-                                    {new Date(gatePass.exitTime).toLocaleString()}
+                                    {new Date(gatePass.exit_time).toLocaleString()}
                                 </Text>
                             </View>
                         )}

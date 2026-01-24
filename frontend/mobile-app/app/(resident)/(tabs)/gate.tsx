@@ -45,8 +45,8 @@ export default function ResidentGateScreen() {
         >
             <View className="flex-row justify-between items-start mb-2">
                 <View className="flex-1">
-                    <Text className="text-lg font-semibold text-slate-900">{item.guestName}</Text>
-                    <Text className="text-sm text-slate-500">{item.guestPhone}</Text>
+                    <Text className="text-lg font-semibold text-slate-900">{item.guest_name}</Text>
+                    <Text className="text-sm text-slate-500">{item.guest_phone}</Text>
                 </View>
                 <View className={`px-3 py-1 rounded-full ${getStatusColor(item.status)}`}>
                     <Text className="text-xs font-medium">{item.status}</Text>
@@ -61,15 +61,15 @@ export default function ResidentGateScreen() {
                 <View className="flex-row items-center">
                     <Text className="text-xs text-slate-400 mr-1">Valid:</Text>
                     <Text className="text-xs font-medium text-slate-700">
-                        {new Date(item.validFrom).toLocaleDateString()}
+                        {new Date(item.valid_from).toLocaleDateString()}
                     </Text>
                 </View>
             </View>
 
-            {item.vehicleNumber && (
+            {item.vehicle_number && (
                 <View className="mt-2 pt-2 border-t border-slate-100">
                     <Text className="text-xs text-slate-500">
-                        Vehicle: <Text className="font-medium text-slate-700">{item.vehicleNumber}</Text>
+                        Vehicle: <Text className="font-medium text-slate-700">{item.vehicle_number}</Text>
                     </Text>
                 </View>
             )}
@@ -101,7 +101,7 @@ export default function ResidentGateScreen() {
                     <FlatList
                         data={gatePasses}
                         renderItem={renderGatePass}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item) => item.id.toString()}
                         contentContainerStyle={{ paddingBottom: 100 }}
                         ListEmptyComponent={
                             <View className="items-center justify-center py-12">

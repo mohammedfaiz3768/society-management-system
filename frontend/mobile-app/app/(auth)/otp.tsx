@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Keyboard } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Keyboard, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '../../src/store/authStore';
 import { verifyOtp } from '../../src/api/auth/auth.api';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+
+
+const { width } = Dimensions.get('window');
 
 export default function OtpScreen() {
     const { email } = useLocalSearchParams<{ email: string }>();
@@ -18,11 +23,8 @@ export default function OtpScreen() {
         mutationFn: (code: string) => verifyOtp({ email: email || '', code }),
         onSuccess: (data) => {
             const { token, user } = data;
-
-            // Store in Zustand + SecureStore
             login(token, user);
 
-            // Route based on role
             if (user.role === 'resident') {
                 router.replace('/(resident)/(tabs)/home');
             } else if (user.role === 'guard') {
@@ -39,28 +41,21 @@ export default function OtpScreen() {
     });
 
     const handleOtpChange = (value: string, index: number) => {
-        // Only accept single digit
         if (value.length > 1) return;
 
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
 
-        // Auto-focus next input with a small delay to ensure state update completes
         if (value && index < 5) {
-            setTimeout(() => {
-                inputRefs.current[index + 1]?.focus();
-            }, 10);
+            inputRefs.current[index + 1]?.focus();
         }
 
-        // Auto-submit on fill (last digit) - only if all 6 boxes are filled
         if (index === 5 && value && newOtp.every(digit => digit !== '')) {
             const fullCode = newOtp.join('');
             if (fullCode.length === 6) {
-                setTimeout(() => {
-                    Keyboard.dismiss();
-                    verifyOtpMutation.mutate(fullCode);
-                }, 100);
+                Keyboard.dismiss();
+                verifyOtpMutation.mutate(fullCode);
             }
         }
     };
@@ -72,54 +67,81 @@ export default function OtpScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white p-6">
-            <TouchableOpacity onPress={() => router.back()} className="mb-8">
-                <Text className="text-slate-500 text-lg">← Back</Text>
-            </TouchableOpacity>
-
-            <View className="mb-8">
-                <Text className="text-2xl font-bold text-slate-900">Enter Code</Text>
-                <Text className="text-slate-500 mt-2">
-                    We sent a verification code to <Text className="font-semibold text-slate-900">{email}</Text>
-                </Text>
-            </View>
-
-            <View className="flex-row justify-between mb-8">
-                {otp.map((digit, index) => (
-                    <TextInput
-                        key={index}
-                        ref={(ref: TextInput | null) => { inputRefs.current[index] = ref; }}
-                        className={`w-12 h-14 border rounded-xl text-center text-xl font-bold ${digit ? 'border-slate-900 bg-slate-50' : 'border-slate-200'
-                            }`}
-                        maxLength={1}
-                        keyboardType="number-pad"
-                        value={digit}
-                        onChangeText={(val) => handleOtpChange(val, index)}
-                        onKeyPress={(e) => handleKeyPress(e, index)}
-                        selectTextOnFocus
-                    />
-                ))}
-            </View>
-
-            <TouchableOpacity
-                onPress={() => verifyOtpMutation.mutate(otp.join(''))}
-                disabled={verifyOtpMutation.isPending || otp.join('').length !== 6}
-                className={`w-full bg-slate-900 rounded-xl py-4 items-center ${(verifyOtpMutation.isPending || otp.join('').length !== 6) ? 'opacity-50' : ''
-                    }`}
+        <View className="flex-1">
+            <LinearGradient
+                colors={['#0f172a', '#1e293b']}
+                style={{ flex: 1 }}
             >
-                {verifyOtpMutation.isPending ? (
-                    <ActivityIndicator color="white" />
-                ) : (
-                    <Text className="text-white font-semibold text-base">Verify</Text>
-                )}
-            </TouchableOpacity>
+                <SafeAreaView className="flex-1 px-6">
+                    <View className="flex-row items-center mb-8 mt-4">
+                        <TouchableOpacity
+                            onPress={() => router.back()}
+                            className="w-10 h-10 bg-white/10 rounded-full items-center justify-center border border-white/20"
+                        >
+                            <Ionicons name="arrow-back" size={20} color="white" />
+                        </TouchableOpacity>
+                    </View>
 
-            <View className="mt-6 flex-row justify-center">
-                <Text className="text-slate-500">Didn't receive code? </Text>
-                <TouchableOpacity>
-                    <Text className="text-blue-600 font-medium">Resend</Text>
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView>
+                    <View className="flex-1 justify-center -mt-20">
+                        <View className="mb-8">
+                            <View className="w-16 h-16 bg-indigo-500/20 rounded-2xl items-center justify-center mb-6 border border-indigo-500/30">
+                                <Ionicons name="shield-checkmark" size={32} color="#818cf8" />
+                            </View>
+                            <Text className="text-3xl font-bold text-white mb-2">Verification Code</Text>
+                            <Text className="text-slate-400 text-base leading-6">
+                                Please enter the 6-digit code sent to
+                                {'\n'}
+                                <Text className="text-indigo-400 font-semibold">{email}</Text>
+                            </Text>
+                        </View>
+
+                        <View className="flex-row justify-between mb-10">
+                            {otp.map((digit, index) => (
+                                <View key={index} className="relative">
+                                    <TextInput
+                                        ref={(ref) => { inputRefs.current[index] = ref; }}
+                                        className={`w-12 h-14 rounded-xl text-center text-xl font-bold bg-white/5 border ${digit ? 'border-indigo-500 text-white' : 'border-white/10 text-slate-400'
+                                            }`}
+                                        maxLength={1}
+                                        keyboardType="number-pad"
+                                        value={digit}
+                                        onChangeText={(val) => handleOtpChange(val, index)}
+                                        onKeyPress={(e) => handleKeyPress(e, index)}
+                                        selectTextOnFocus
+                                        selectionColor="#818cf8"
+                                    />
+                                    {/* Glow effect for active input */}
+                                    {digit ? (
+                                        <View className="absolute -inset-1 bg-indigo-500/20 rounded-xl -z-10 blur-sm" />
+                                    ) : null}
+                                </View>
+                            ))}
+                        </View>
+
+                        <View>
+                            <TouchableOpacity
+                                onPress={() => verifyOtpMutation.mutate(otp.join(''))}
+                                disabled={verifyOtpMutation.isPending || otp.join('').length !== 6}
+                                className={`w-full bg-indigo-600 rounded-xl py-4 items-center shadow-lg shadow-indigo-900/50 ${(verifyOtpMutation.isPending || otp.join('').length !== 6) ? 'opacity-50' : ''
+                                    }`}
+                            >
+                                {verifyOtpMutation.isPending ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <Text className="text-white font-bold text-lg">Verify & Proceed</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+
+                        <View className="mt-8 flex-row justify-center items-center">
+                            <Text className="text-slate-400">Didn't receive code? </Text>
+                            <TouchableOpacity>
+                                <Text className="text-indigo-400 font-bold ml-1">Resend in 30s</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </SafeAreaView>
+            </LinearGradient>
+        </View>
     );
 }

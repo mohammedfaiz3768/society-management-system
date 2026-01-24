@@ -47,13 +47,13 @@ export const useAuthStore = create<AuthState>()(
                     token,
                     user,
                     userRole: user.role,
-                    societyId: user.societyId || null
+                    societyId: (user as any).societyId || null
                 });
             },
             logout: () => {
                 console.log('[AuthStore] LOGOUT action called');
                 set({ token: null, user: null, userRole: null, societyId: null });
-                // Optional: clear router or navigate to auth
+                // Note: Navigation handled by _layout.tsx useEffect watching token changes
             },
             loadUser: async () => {
                 // augment this if needed, but persist middleware handles hydration

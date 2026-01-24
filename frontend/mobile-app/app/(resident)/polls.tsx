@@ -10,9 +10,10 @@ export default function PollsScreen() {
     const router = useRouter();
     const queryClient = useQueryClient();
 
-    const { data: polls, isLoading } = useQuery({
+    const { data: polls, isLoading, error } = useQuery({
         queryKey: ['polls'],
         queryFn: getActivePolls,
+        retry: 1,
     });
 
     const voteMutation = useMutation({
@@ -79,7 +80,18 @@ export default function PollsScreen() {
 
             <View className="px-4 py-2">
                 {isLoading ? (
-                    <ActivityIndicator size="large" color="#0f172a" className="mt-10" />
+                    <View className="items-center mt-10">
+                        <ActivityIndicator size="large" color="#0f172a" />
+                        <Text className="text-slate-500 mt-4">Loading polls...</Text>
+                    </View>
+                ) : error ? (
+                    <View className="items-center mt-10 px-6">
+                        <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+                        <Text className="text-slate-900 font-bold text-lg mt-4 text-center">Unable to Load</Text>
+                        <Text className="text-slate-500 mt-2 text-center">
+                            Polls module not available. Please contact admin.
+                        </Text>
+                    </View>
                 ) : (
                     <FlatList
                         data={polls}

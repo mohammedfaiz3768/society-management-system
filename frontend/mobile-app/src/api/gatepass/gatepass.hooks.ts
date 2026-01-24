@@ -45,11 +45,11 @@ export function useGatePassList(filters?: GatePassFilters, options?: { pollingIn
  * Fetch single gate pass by ID
  * Useful for detail view with status polling
  */
-export function useGatePassDetail(id: number, options?: { enabled?: boolean; pollingInterval?: number }) {
+export function useGatePassDetail(id: number | undefined, options?: { enabled?: boolean; pollingInterval?: number }) {
     return useQuery({
-        queryKey: queryKeys.gatePass.detail(id.toString()),
-        queryFn: () => getGatePassById(id),
-        enabled: options?.enabled ?? true,
+        queryKey: queryKeys.gatePass.detail(id?.toString() ?? ''),
+        queryFn: () => getGatePassById(id!),
+        enabled: (options?.enabled ?? true) && !!id,
         refetchInterval: options?.pollingInterval, // Poll for status updates (PENDING → APPROVED)
     });
 }

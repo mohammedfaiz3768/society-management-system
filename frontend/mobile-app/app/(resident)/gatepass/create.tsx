@@ -86,16 +86,24 @@ export default function CreateGatePassScreen() {
                     </View>
                 </View>
 
-                {/* Guest Name */}
+                {/* Guest Name / Company Name / Cab Service - Dynamic based on type */}
                 <View className="mb-4">
-                    <Text className="text-sm font-medium text-slate-700 mb-1.5">Guest Name *</Text>
+                    <Text className="text-sm font-medium text-slate-700 mb-1.5">
+                        {selectedType === 'Visitor' ? 'Guest Name *' :
+                            selectedType === 'Delivery' ? 'Company / Service Name *' :
+                                'Cab Service *'}
+                    </Text>
                     <Controller
                         control={control}
                         name="guestName"
                         render={({ field: { onChange, onBlur, value } }) => (
                             <TextInput
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900"
-                                placeholder="John Doe"
+                                placeholder={
+                                    selectedType === 'Visitor' ? 'John Doe' :
+                                        selectedType === 'Delivery' ? 'Zomato / Swiggy / Amazon' :
+                                            'Uber / Ola / Rapido'
+                                }
                                 onBlur={onBlur}
                                 onChangeText={onChange}
                                 value={value}
@@ -107,9 +115,13 @@ export default function CreateGatePassScreen() {
                     )}
                 </View>
 
-                {/* Guest Phone */}
+                {/* Guest Phone / Delivery Person / Driver Phone - Dynamic */}
                 <View className="mb-4">
-                    <Text className="text-sm font-medium text-slate-700 mb-1.5">Guest Phone *</Text>
+                    <Text className="text-sm font-medium text-slate-700 mb-1.5">
+                        {selectedType === 'Visitor' ? 'Guest Phone *' :
+                            selectedType === 'Delivery' ? 'Delivery Person Phone *' :
+                                'Driver Phone *'}
+                    </Text>
                     <Controller
                         control={control}
                         name="guestPhone"
@@ -149,16 +161,24 @@ export default function CreateGatePassScreen() {
                     />
                 </View>
 
-                {/* Purpose (Optional) */}
+                {/* Purpose (Optional) - Dynamic placeholder */}
                 <View className="mb-6">
-                    <Text className="text-sm font-medium text-slate-700 mb-1.5">Purpose</Text>
+                    <Text className="text-sm font-medium text-slate-700 mb-1.5">
+                        {selectedType === 'Visitor' ? 'Purpose' :
+                            selectedType === 'Delivery' ? 'Order Details' :
+                                'Trip Details'}
+                    </Text>
                     <Controller
                         control={control}
                         name="purpose"
                         render={({ field: { onChange, onBlur, value } }) => (
                             <TextInput
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900"
-                                placeholder="Personal visit"
+                                placeholder={
+                                    selectedType === 'Visitor' ? 'Personal visit' :
+                                        selectedType === 'Delivery' ? 'Food / Package / Grocery' :
+                                            'Drop / Pickup'
+                                }
                                 multiline
                                 numberOfLines={3}
                                 textAlignVertical="top"
@@ -170,10 +190,14 @@ export default function CreateGatePassScreen() {
                     />
                 </View>
 
-                {/* Info Box */}
+                {/* Info Box - Dynamic message */}
                 <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                     <Text className="text-sm text-blue-900">
-                        ℹ️ Your pass will be valid for 24 hours from creation. A guard must approve it before it becomes active.
+                        {selectedType === 'Visitor'
+                            ? 'ℹ️ Your pass will be valid for 24 hours. A guard must approve it before the guest can enter.'
+                            : selectedType === 'Delivery'
+                                ? 'ℹ️ For deliveries, mention the service name (Zomato, Swiggy, Amazon, etc.) and delivery person\'s phone number.'
+                                : 'ℹ️ For cab bookings, provide the cab service name and driver details for smooth entry.'}
                     </Text>
                 </View>
 

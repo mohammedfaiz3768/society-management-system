@@ -64,7 +64,18 @@ export async function createGatePass(data: CreateGatePass): Promise<GatePass> {
     // Validate input
     const validatedData = CreateGatePassSchema.parse(data);
 
-    const response = await apiClient.post<GatePass>('/gate-pass/create', validatedData);
+    // Convert camelCase to snake_case for backend
+    const backendPayload = {
+        visitor_name: validatedData.guestName, // Backend expects visitor_name
+        visitor_phone: validatedData.guestPhone, // Backend expects visitor_phone
+        type: validatedData.type,
+        valid_from: validatedData.validFrom.toISOString(),
+        valid_to: validatedData.validTo.toISOString(),
+        vehicle_number: validatedData.vehicleNumber || null,
+        purpose: validatedData.purpose || null,
+    };
+
+    const response = await apiClient.post<GatePass>('/gate-pass/create', backendPayload);
     return GatePassSchema.parse(response.data);
 }
 

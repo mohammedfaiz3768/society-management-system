@@ -7,24 +7,40 @@ import { getMySlot, getMyVehicles } from '../../src/api/parking/parking.api';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ParkingScreen() {
-    const { data: slot, isLoading: loadingSlot } = useQuery({
+    const { data: slot, isLoading: loadingSlot, error: slotError } = useQuery({
         queryKey: ['parking', 'slot'],
         queryFn: getMySlot,
+        retry: 1,
     });
 
-    const { data: vehicles, isLoading: loadingVehicles } = useQuery({
+    const { data: vehicles, isLoading: loadingVehicles, error: vehiclesError } = useQuery({
         queryKey: ['parking', 'vehicles'],
         queryFn: getMyVehicles,
+        retry: 1,
     });
 
     const isLoading = loadingSlot || loadingVehicles;
+    const hasError = slotError || vehiclesError;
 
     return (
         <SafeAreaView className="flex-1 bg-slate-50 px-4 pt-2">
             <Stack.Screen options={{ title: 'My Parking', headerShadowVisible: false }} />
 
             {isLoading ? (
-                <ActivityIndicator size="large" color="#4f46e5" className="mt-10" />
+                <View className="items-center mt-10">
+                    <ActivityIndicator size="large" color="#4f46e5" />
+                    <Text className="text-slate-500 mt-4">Loading parking details...</Text>
+                </View>
+            ) : hasError ? (
+                <View className="items-center mt-10 px-6">
+                    <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+                    <Text className="text-slate-900 font-bold text-lg mt-4 text-center">Unable to Load</Text>
+                    <Text className="text-slate-500 mt-2 text-center">
+                        {(slotError as any)?.response?.status === 404
+                            ? 'Parking module not available for residents'
+                            : 'Failed to load parking information. Please try again later.'}
+                    </Text>
+                </View>
             ) : (
                 <View>
                     {/* Parking Slot Card */}

@@ -1,7 +1,22 @@
+import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, View } from 'react-native';
+import { useFonts } from 'expo-font';
 
 export default function GuardLayout() {
+    // Ensure Ionicons font is loaded
+    const [fontsLoaded] = useFonts({
+        ...Ionicons.font,
+    });
+
+    if (!fontsLoaded) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#0D9488" />
+            </View>
+        );
+    }
     return (
         <Tabs
             screenOptions={{

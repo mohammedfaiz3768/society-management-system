@@ -1,53 +1,85 @@
 import React from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { getAnnouncements } from '../../src/api/announcements/announcements.api';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function NoticesScreen() {
+    const router = useRouter();
     const { data: list, isLoading } = useQuery({
         queryKey: ['announcements'],
         queryFn: getAnnouncements,
     });
 
     const renderItem = ({ item }: { item: any }) => (
-        <View className="bg-white p-5 rounded-xl mb-4 shadow-sm border border-slate-100">
-            <View className="flex-row justify-between mb-2">
-                <View className="bg-indigo-50 px-2 py-1 rounded">
-                    <Text className="text-indigo-600 text-xs font-bold uppercase">{item.type}</Text>
+        <View className="bg-white p-5 rounded-2xl mb-4 shadow-sm border border-slate-100">
+            <View className="flex-row justify-between mb-3">
+                <View className={`px-3 py-1 rounded-full ${item.type === 'emergency' ? 'bg-red-100' : 'bg-indigo-50'}`}>
+                    <Text className={`text-xs font-bold uppercase ${item.type === 'emergency' ? 'text-red-700' : 'text-indigo-600'}`}>
+                        {item.type}
+                    </Text>
                 </View>
-                <Text className="text-slate-400 text-xs">{new Date(item.created_at).toLocaleDateString()}</Text>
+                <Text className="text-slate-400 text-xs font-medium">{new Date(item.created_at).toLocaleDateString()}</Text>
             </View>
-            <Text className="text-lg font-bold text-slate-900 mb-2">{item.title}</Text>
-            <Text className="text-slate-600 leading-relaxed">{item.message}</Text>
-            <View className="mt-3 pt-3 border-t border-slate-50">
-                <Text className="text-slate-400 text-xs">Posted by {item.admin_name}</Text>
+            <Text className="text-lg font-bold text-slate-900 mb-2 leading-tight">{item.title}</Text>
+            <Text className="text-slate-600 leading-relaxed text-sm">{item.message}</Text>
+            <View className="mt-4 pt-3 border-t border-slate-50 flex-row items-center">
+                <View className="w-6 h-6 bg-slate-200 rounded-full items-center justify-center mr-2">
+                    <Ionicons name="person" size={12} color="#64748b" />
+                </View>
+                <Text className="text-slate-400 text-xs font-medium">By {item.admin_name}</Text>
             </View>
         </View>
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-50 px-4 pt-2">
-            <Stack.Screen options={{ title: 'Notices Board', headerShadowVisible: false }} />
+        <View className="flex-1 bg-slate-50">
+            <Stack.Screen options={{ headerShown: false }} />
+
+            {/* Premium Header */}
+            <LinearGradient
+                colors={['#2563eb', '#1d4ed8']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="pt-12 pb-6 px-4 rounded-b-3xl shadow-lg shadow-blue-500/30 mb-4"
+            >
+                <View className="flex-row items-center justify-between">
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        className="w-10 h-10 bg-white/20 rounded-full items-center justify-center border border-white/20"
+                    >
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
+                    <Text className="text-white text-xl font-bold">Notice Board</Text>
+                    <View className="w-10" />
+                </View>
+            </LinearGradient>
 
             {isLoading ? (
-                <ActivityIndicator size="large" color="#4f46e5" className="mt-10" />
+                <View className="flex-1 justify-center items-center">
+                    <ActivityIndicator size="large" color="#2563eb" />
+                </View>
             ) : (
                 <FlatList
                     data={list}
                     renderItem={renderItem}
                     keyExtractor={item => item.id.toString()}
-                    contentContainerStyle={{ paddingBottom: 20 }}
+                    contentContainerStyle={{ padding: 16 }}
+                    showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <View className="items-center mt-20">
-                            <Ionicons name="notifications-off-outline" size={48} color="#cbd5e1" />
-                            <Text className="text-slate-400 mt-2">No active notices</Text>
+                        <View className="items-center justify-center mt-20 opacity-50">
+                            <View className="w-24 h-24 bg-slate-200 rounded-full items-center justify-center mb-4">
+                                <Ionicons name="notifications-off-outline" size={48} color="#94a3b8" />
+                            </View>
+                            <Text className="text-lg font-semibold text-slate-500">No active notices</Text>
+                            <Text className="text-slate-400 text-sm mt-1">Check back later</Text>
                         </View>
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }

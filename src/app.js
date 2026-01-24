@@ -60,7 +60,7 @@ app.use("/api/invitations", require("./modules/invitations/invitationRoutes")); 
 // app.use("/api/chat", require("./hidden/chat/chatRoutes"));
 
 
-app.use("/api/notifications", require("./hidden/notifications/notificationRoutes"));
+app.use("/api/notifications", authMiddleware, societyMiddleware, require("./routes/notificationRoutes"));
 app.use("/api/invoices", require("./routes/invoiceRoutes"));
 app.use("/api/services", require("./routes/serviceRoutes"));
 app.use("/api/registration", require("./modules/registration/registrationRoutes"));

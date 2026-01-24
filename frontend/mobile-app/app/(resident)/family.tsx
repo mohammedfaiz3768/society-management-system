@@ -11,15 +11,17 @@ export default function FamilyScreen() {
     const [isWrapperOpen, setWrapperOpen] = useState(false); // Modal visibility
     const [newUser, setNewUser] = useState({ name: '', phone: '', relation: 'Family' });
 
-    const { data: flat, isLoading: loadingFlat } = useQuery({
+    const { data: flat, isLoading: loadingFlat, error: flatError } = useQuery({
         queryKey: ['my-flat'],
         queryFn: getMyFlat,
+        retry: 1,
     });
 
-    const { data: members, isLoading: loadingMembers } = useQuery({
+    const { data: members, isLoading: loadingMembers, error: membersError } = useQuery({
         queryKey: ['family-members'],
         queryFn: getFamilyMembers,
-        enabled: !!flat
+        enabled: !!flat,
+        retry: 1,
     });
 
     const addMutation = useMutation({
@@ -62,7 +64,18 @@ export default function FamilyScreen() {
             <Stack.Screen options={{ title: 'My Family', headerShadowVisible: false }} />
 
             {loadingFlat ? (
-                <ActivityIndicator size="large" color="#db2777" className="mt-10" />
+                <View className="items-center mt-10">
+                    <ActivityIndicator size="large" color="#db2777" />
+                    <Text className="text-slate-500 mt-4">Loading family details...</Text>
+                </View>
+            ) : flatError ? (
+                <View className="items-center mt-10 px-6">
+                    <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+                    <Text className="text-slate-900 font-bold text-lg mt-4 text-center">Unable to Load</Text>
+                    <Text className="text-slate-500 mt-2 text-center">
+                        Family module not available. Please contact admin.
+                    </Text>
+                </View>
             ) : flat ? (
                 <View>
                     <View className="bg-pink-600 rounded-2xl p-6 mb-6 shadow-md shadow-pink-200">

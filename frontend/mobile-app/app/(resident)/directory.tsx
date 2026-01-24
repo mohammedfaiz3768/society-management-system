@@ -9,16 +9,18 @@ import { Ionicons } from '@expo/vector-icons';
 export default function DirectoryScreen() {
     const [tab, setTab] = useState<'staff' | 'residents'>('staff');
 
-    const { data: staff, isLoading: loadingStaff } = useQuery({
+    const { data: staff, isLoading: loadingStaff, error: staffError } = useQuery({
         queryKey: ['directory', 'staff'],
         queryFn: getStaffDirectory,
-        enabled: tab === 'staff'
+        enabled: tab === 'staff',
+        retry: 1,
     });
 
-    const { data: residents, isLoading: loadingResidents } = useQuery({
+    const { data: residents, isLoading: loadingResidents, error: residentsError } = useQuery({
         queryKey: ['directory', 'residents'],
         queryFn: getResidentDirectory,
-        enabled: tab === 'residents'
+        enabled: tab === 'residents',
+        retry: 1,
     });
 
     const callNumber = (phone: string) => {
@@ -81,7 +83,18 @@ export default function DirectoryScreen() {
 
             <View className="px-4 flex-1">
                 {(tab === 'staff' ? loadingStaff : loadingResidents) ? (
-                    <ActivityIndicator size="large" color="#2563eb" className="mt-10" />
+                    <View className="items-center mt-10">
+                        <ActivityIndicator size="large" color="#2563eb" />
+                        <Text className="text-slate-500 mt-4">Loading directory...</Text>
+                    </View>
+                ) : (tab === 'staff' ? staffError : residentsError) ? (
+                    <View className="items-center mt-10 px-6">
+                        <Ionicons name="alert-circle-outline" size={64} color="#ef4444" />
+                        <Text className="text-slate-900 font-bold text-lg mt-4 text-center">Unable to Load</Text>
+                        <Text className="text-slate-500 mt-2 text-center">
+                            Directory module not available. Please contact admin.
+                        </Text>
+                    </View>
                 ) : (
                     <FlatList
                         data={tab === 'staff' ? staff : residents}

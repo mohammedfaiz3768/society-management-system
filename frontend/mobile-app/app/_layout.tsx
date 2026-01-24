@@ -4,6 +4,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { useAuthStore } from '../src/store/authStore';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 
 // CRITICAL: Import global CSS for NativeWind
 import "../global.css";
@@ -12,12 +15,27 @@ import { registerForPushNotificationsAsync } from '../src/utils/notifications';
 import { apiClient } from '../src/api/client';
 import * as Notifications from 'expo-notifications';
 
+// Keep the splash screen visible while we fetch fonts
+SplashScreen.preventAutoHideAsync();
+
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
     const { token, userRole, isLoading } = useAuthStore();
     const segments = useSegments();
     const router = useRouter();
+
+    // Load icon fonts
+    const [fontsLoaded, fontError] = useFonts({
+        ...Ionicons.font,
+    });
+
+    // Hide splash screen when fonts are loaded
+    useEffect(() => {
+        if (fontsLoaded || fontError) {
+            SplashScreen.hideAsync();
+        }
+    }, [fontsLoaded, fontError]);
 
     // Notification Listener - DISABLED FOR EXPO GO
     // Push notifications only work in production/development builds, not Expo Go
@@ -74,6 +92,11 @@ export default function RootLayout() {
 
         return () => clearTimeout(navigationTimeout);
     }, [token, segments, isLoading, userRole]);
+
+    // Show nothing until fonts are loaded (moved after all hooks)
+    if (!fontsLoaded && !fontError) {
+        return null;
+    }
 
     return (
         <QueryClientProvider client={queryClient}>

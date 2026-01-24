@@ -5,7 +5,7 @@ const crypto = require("crypto");
 exports.createGatePass = async (req, res) => {
   const userId = req.user.id;
   const societyId = req.societyId;
-  const { visitor_name, phone, vehicle_number, purpose, valid_until } = req.body;
+  const { visitor_name, visitor_phone, vehicle_number, purpose, valid_until } = req.body;
 
   if (!visitor_name) {
     return res.status(400).json({ message: "visitor_name is required" });
@@ -15,10 +15,10 @@ exports.createGatePass = async (req, res) => {
     const pass_code = Math.floor(100000 + Math.random() * 900000).toString();
 
     const result = await pool.query(
-      `INSERT INTO gate_passes (user_id, visitor_name, phone, vehicle_number, purpose, pass_code, valid_until, society_id)
+      `INSERT INTO gate_passes (user_id, visitor_name, visitor_phone, vehicle_number, purpose, pass_code, valid_until, society_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [userId, visitor_name, phone || "", vehicle_number || "", purpose || "", pass_code, valid_until || null, societyId]
+      [userId, visitor_name, visitor_phone || "", vehicle_number || "", purpose || "", pass_code, valid_until || null, societyId]
     );
 
     const gatePass = result.rows[0];

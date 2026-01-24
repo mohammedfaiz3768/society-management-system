@@ -34,7 +34,7 @@ interface Complaint {
     id: number;
     title: string;
     description: string;
-    status: 'pending' | 'resolved' | 'rejected';
+    status: 'pending' | 'in_progress' | 'resolved' | 'closed';
     created_at: string;
     name: string; // user name
     phone: string;
@@ -124,12 +124,14 @@ export default function ComplaintsPage() {
                                     <TableCell>
                                         <div className={`flex items-center gap-2 capitalize
                                             ${c.status === 'resolved' ? 'text-green-600' :
-                                                c.status === 'rejected' ? 'text-red-600' :
-                                                    'text-amber-600'}`}>
+                                                c.status === 'closed' ? 'text-gray-600' :
+                                                    c.status === 'in_progress' ? 'text-blue-600' :
+                                                        'text-amber-600'}`}>
                                             {c.status === 'resolved' && <CheckCircle className="h-4 w-4" />}
-                                            {c.status === 'rejected' && <AlertCircle className="h-4 w-4" />}
+                                            {c.status === 'closed' && <CheckCircle className="h-4 w-4" />}
                                             {c.status === 'pending' && <Clock className="h-4 w-4" />}
-                                            {c.status}
+                                            {c.status === 'in_progress' && <AlertCircle className="h-4 w-4" />}
+                                            {c.status.replace('_', ' ')}
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -186,8 +188,9 @@ export default function ComplaintsPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="in_progress">In Progress</SelectItem>
                                         <SelectItem value="resolved">Resolved</SelectItem>
-                                        <SelectItem value="rejected">Rejected</SelectItem>
+                                        <SelectItem value="closed">Closed</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
