@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 
 interface GatePass {
@@ -58,7 +58,7 @@ export default function GatePassesPage() {
     };
 
     // Fetch on mount and when filters change
-    useState(() => {
+    useEffect(() => {
         fetchGatePasses();
     }, [currentPage, filterUsed]);
 
@@ -93,8 +93,8 @@ export default function GatePassesPage() {
                             <button
                                 onClick={() => setFilterUsed("all")}
                                 className={`px-4 py-2 rounded-lg font-medium ${filterUsed === "all"
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                     }`}
                             >
                                 All
@@ -102,8 +102,8 @@ export default function GatePassesPage() {
                             <button
                                 onClick={() => setFilterUsed("used")}
                                 className={`px-4 py-2 rounded-lg font-medium ${filterUsed === "used"
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                     }`}
                             >
                                 Used
@@ -111,8 +111,8 @@ export default function GatePassesPage() {
                             <button
                                 onClick={() => setFilterUsed("unused")}
                                 className={`px-4 py-2 rounded-lg font-medium ${filterUsed === "unused"
-                                        ? "bg-blue-600 text-white"
-                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                     }`}
                             >
                                 Unused
