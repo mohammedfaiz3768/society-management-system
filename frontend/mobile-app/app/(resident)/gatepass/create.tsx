@@ -36,6 +36,7 @@ export default function CreateGatePassScreen() {
             validTo: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
             vehicleNumber: '',
             purpose: '',
+            numberOfPeople: 1,
         },
     });
 
@@ -48,7 +49,20 @@ export default function CreateGatePassScreen() {
             // Navigate to the gate pass details to show QR code
             router.replace(`/gatepass/${result.id}`);
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to create gate pass');
+            // Handle rate limiting error
+            if (error.response?.status === 429) {
+                const data = error.response?.data;
+                const seconds = data?.remainingSeconds || 0;
+                const minutes = Math.floor(seconds / 60);
+                const remainingSecs = seconds % 60;
+                const timeString = minutes > 0 ? `${minutes}m ${remainingSecs}s` : `${seconds}s`;
+                Alert.alert(
+                    'Rate Limit Exceeded',
+                    data?.message || `Please wait ${timeString} before creating another gate pass for this number.`
+                );
+            } else {
+                Alert.alert('Error', error.message || 'Failed to create gate pass');
+            }
         }
     };
 
@@ -142,6 +156,32 @@ export default function CreateGatePassScreen() {
                         <Text className="text-red-500 text-sm mt-1">{errors.guestPhone.message}</Text>
                     )}
                 </View>
+
+                {/* Number of People (Only for Visitors) */}
+                {selectedType === 'Visitor' && (
+                    <View className="mb-4">
+                        <Text className="text-sm font-medium text-slate-700 mb-1.5">Number of People</Text>
+                        <Controller
+                            control={control}
+                            name="numberOfPeople"
+                            render={({ field: { onChange, onBlur, value } }) => (
+                                <TextInput
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900"
+                                    placeholder="1"
+                                    keyboardType="number-pad"
+                                    maxLength={2}
+                                    onBlur={onBlur}
+                                    onChangeText={(text) => onChange(parseInt(text) || 1)}
+                                    value={value?.toString()}
+                                />
+                            )}
+                        />
+                        {errors.numberOfPeople && (
+                            <Text className="text-red-500 text-sm mt-1">{errors.numberOfPeople.message}</Text>
+                        )}
+                        <Text className="text-xs text-slate-500 mt-1">For family visits - enter total number of persons</Text>
+                    </View>
+                )}
 
                 {/* Vehicle Number (Optional) */}
                 <View className="mb-4">

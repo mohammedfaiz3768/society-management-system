@@ -11,10 +11,15 @@ const {
    deleteGatePass
 } = require("./gatePassController");
 
+const { getAllGatePassesAdmin } = require("./adminGatePassController");
+
 const authMiddleware = require("../../middleware/authMiddleware");
 const requireRole = require("../../middleware/roleMiddleware");
 
 router.use(authMiddleware);
+
+// Admin Routes
+router.get("/admin/all", requireRole("admin"), getAllGatePassesAdmin);
 
 // Resident Routes
 router.post("/create", requireRole("resident", "admin"), createGatePass);

@@ -73,6 +73,7 @@ export async function createGatePass(data: CreateGatePass): Promise<GatePass> {
         valid_to: validatedData.validTo.toISOString(),
         vehicle_number: validatedData.vehicleNumber || null,
         purpose: validatedData.purpose || null,
+        number_of_people: validatedData.numberOfPeople || 1,
     };
 
     const response = await apiClient.post<GatePass>('/gate-pass/create', backendPayload);

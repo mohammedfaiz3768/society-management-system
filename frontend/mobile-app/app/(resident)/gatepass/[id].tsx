@@ -87,6 +87,13 @@ export default function GatePassDetailScreen() {
                             </View>
                         )}
 
+                        {gatePass.number_of_people && gatePass.number_of_people > 1 && (
+                            <View className="flex-row justify-between py-2 border-b border-slate-100">
+                                <Text className="text-slate-600">Number of People</Text>
+                                <Text className="font-medium text-slate-900">{gatePass.number_of_people} people</Text>
+                            </View>
+                        )}
+
                         <View className="flex-row justify-between py-2">
                             <Text className="text-slate-600">Valid Until</Text>
                             <Text className="font-medium text-slate-900">

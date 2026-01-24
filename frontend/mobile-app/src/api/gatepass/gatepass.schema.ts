@@ -34,6 +34,7 @@ export const GatePassSchema = z.object({
     qr_code: z.string(),
     valid_until: z.string(), // Database has valid_until, not valid_from/valid_to
     used: z.boolean().optional(),
+    number_of_people: z.number().optional().default(1),
     created_at: z.string(),
 });
 
@@ -46,6 +47,7 @@ export const CreateGatePassSchema = z.object({
     validTo: z.coerce.date(),
     vehicleNumber: z.string().optional(),
     purpose: z.string().optional(),
+    numberOfPeople: z.number().min(1).max(20).optional().default(1),
 });
 
 // QR Verification Response
