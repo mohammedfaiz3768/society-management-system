@@ -18,6 +18,6 @@ router.post("/", requireRole("admin"), createPoll);
 router.get("/:id/results", requireRole("admin"), getPollResults);
 router.get("/", getActivePolls);
 router.get("/:id", getPollDetails);
-router.post("/vote", requireRole("resident", "admin"), submitVote);
+router.post("/:id/vote", requireRole("resident", "admin"), submitVote);
 
 module.exports = router;

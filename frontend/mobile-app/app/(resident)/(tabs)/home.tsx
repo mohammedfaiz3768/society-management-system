@@ -53,7 +53,7 @@ export default function HomeScreen() {
     };
 
     const quickActions = [
-        { name: 'Visitors', icon: 'people-outline', route: '/(resident)/visitors', color: '#06B6D4', bg: 'bg-cyan-50' },
+        { name: 'Visitors', icon: 'people-outline', route: '/(resident)/(tabs)/gate', color: '#06B6D4', bg: 'bg-cyan-50' },
         { name: 'Maintenance', icon: 'construct-outline', route: '/(resident)/maintenance', color: '#F59E0B', bg: 'bg-amber-50' },
         { name: 'Polls', icon: 'bar-chart-outline', route: '/(resident)/polls', color: '#14B8A6', bg: 'bg-teal-50' },
         { name: 'Complaints', icon: 'warning-outline', route: '/(resident)/complaints', color: '#EF4444', bg: 'bg-red-50' },
