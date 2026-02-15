@@ -16,7 +16,7 @@ app.use(
     express.raw({ type: "application/json" })
 );
 
-app.use(express.json()); s
+app.use(express.json());
 app.use(cors({ origin: "*" }));
 
 // Import middlewares
