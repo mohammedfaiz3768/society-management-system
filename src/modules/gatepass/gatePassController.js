@@ -12,28 +12,34 @@ exports.createGatePass = async (req, res) => {
   }
 
   try {
-    // Rate limiting: Check if a gate pass was created for this phone number in the last 5 minutes
+    // Rate limiting: Check if a gate pass with same details was created in the last 2 minutes
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+    const queryConditions = ['user_id = $1', 'society_id = $2', 'created_at > $3', 'visitor_name = $4'];
+    const queryParams = [userId, societyId, twoMinutesAgo, visitor_name];
+
     if (visitor_phone) {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      const recentPassCheck = await pool.query(
-        `SELECT id, created_at FROM gate_passes 
-         WHERE visitor_phone = $1 AND society_id = $2 AND created_at > $3
-         ORDER BY created_at DESC LIMIT 1`,
-        [visitor_phone, societyId, fiveMinutesAgo]
-      );
+      queryConditions.push(`visitor_phone = $${queryParams.length + 1}`);
+      queryParams.push(visitor_phone);
+    }
 
-      if (recentPassCheck.rows.length > 0) {
-        const recentPass = recentPassCheck.rows[0];
-        const createdAt = new Date(recentPass.created_at);
-        const waitUntil = new Date(createdAt.getTime() + 5 * 60 * 1000);
-        const remainingSeconds = Math.ceil((waitUntil - Date.now()) / 1000);
+    const recentPassCheck = await pool.query(
+      `SELECT id, created_at FROM gate_passes 
+       WHERE ${queryConditions.join(' AND ')}
+       ORDER BY created_at DESC LIMIT 1`,
+      queryParams
+    );
 
-        return res.status(429).json({
-          message: `A gate pass for this phone number was created recently. Please wait ${remainingSeconds} seconds before creating another.`,
-          remainingSeconds,
-          waitUntil: waitUntil.toISOString()
-        });
-      }
+    if (recentPassCheck.rows.length > 0) {
+      const recentPass = recentPassCheck.rows[0];
+      const createdAt = new Date(recentPass.created_at);
+      const waitUntil = new Date(createdAt.getTime() + 2 * 60 * 1000);
+      const remainingSeconds = Math.ceil((waitUntil - Date.now()) / 1000);
+
+      return res.status(429).json({
+        message: `A gate pass with the same details was created recently. Please wait ${remainingSeconds} seconds before creating another.`,
+        remainingSeconds,
+        waitUntil: waitUntil.toISOString()
+      });
     }
 
     const qr_code = Math.floor(100000 + Math.random() * 900000).toString();
