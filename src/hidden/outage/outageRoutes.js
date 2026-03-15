@@ -15,12 +15,10 @@ const requireRole = require("../../middleware/roleMiddleware");
 
 router.use(auth);
 
-// ADMIN
 router.post("/", requireRole("admin"), createOutage);
 router.put("/:id", requireRole("admin"), updateOutage);
 router.put("/:id/cancel", requireRole("admin"), cancelOutage);
 
-// USERS
 router.get("/", getAllOutages);
 router.get("/upcoming", getUpcomingOutages);
 router.get("/active", getActiveOutages);

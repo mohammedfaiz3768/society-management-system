@@ -4,7 +4,7 @@ const { logActivity } = require("../../utils/activityLogger");
 
 exports.createAnnouncement = async (req, res) => {
   const adminId = req.user.id;
-  const societyId = req.societyId; // From society middleware
+  const societyId = req.societyId; 
   const { title, message, type } = req.body;
 
   if (!title || !message) {
@@ -12,7 +12,6 @@ exports.createAnnouncement = async (req, res) => {
   }
 
   try {
-    // Insert announcement with society_id
     const result = await pool.query(
       `INSERT INTO announcements(title, message, type, created_by, society_id)
 VALUES($1, $2, $3, $4, $5)
@@ -22,7 +21,6 @@ RETURNING * `,
 
     const announcement = result.rows[0];
 
-    // Notify only residents in the same society
     const users = await pool.query(
       `SELECT id FROM users WHERE role = 'resident' AND society_id = $1`,
       [societyId]
@@ -56,10 +54,9 @@ RETURNING * `,
 
 exports.deleteAnnouncement = async (req, res) => {
   const { id } = req.params;
-  const societyId = req.societyId; // From society middleware
+  const societyId = req.societyId; 
 
   try {
-    // Delete only if announcement belongs to user's society
     await pool.query(`DELETE FROM announcements WHERE id = $1 AND society_id = $2`, [id, societyId]);
 
     await logActivity({
@@ -79,10 +76,9 @@ exports.deleteAnnouncement = async (req, res) => {
 };
 
 exports.getAnnouncements = async (req, res) => {
-  const societyId = req.societyId; // From society middleware
+  const societyId = req.societyId; 
 
   try {
-    // Get only announcements from user's society
     const result = await pool.query(
       `SELECT a.*, u.name AS admin_name 
        FROM announcements a
@@ -101,10 +97,9 @@ exports.getAnnouncements = async (req, res) => {
 
 exports.getAnnouncementById = async (req, res) => {
   const { id } = req.params;
-  const societyId = req.societyId; // From society middleware
+  const societyId = req.societyId; 
 
   try {
-    // Get only if announcement belongs to user's society
     const result = await pool.query(
       `SELECT a.*, u.name AS admin_name 
        FROM announcements a

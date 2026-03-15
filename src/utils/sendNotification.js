@@ -19,7 +19,6 @@ exports.sendNotification = async (userId, title, message, type = "general", req 
       }
     }
 
-    // Only attempt FCM if Firebase is initialized
     if (isInitialized && admin) {
       const tokenResult = await pool.query(
         `SELECT fcm_token FROM users WHERE id = $1`,

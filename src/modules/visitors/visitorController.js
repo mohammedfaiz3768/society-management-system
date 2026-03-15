@@ -72,7 +72,6 @@ exports.approveVisitor = async (req, res) => {
       return res.status(404).json({ message: "Visitor not found" });
     }
 
-    // Ensure the resident approving is the owner of the flat the visitor is visiting
     const flatOwner = await pool.query(
       `SELECT owner_id FROM flats WHERE flat_number = $1 AND society_id = $2`,
       [visitor.rows[0].flat_number, societyId]
@@ -93,7 +92,7 @@ exports.approveVisitor = async (req, res) => {
     const updatedVisitor = updated.rows[0];
 
     await sendNotification(
-      updatedVisitor.user_id, // Changed from guard_id to user_id
+      updatedVisitor.user_id, 
       "Visitor Approval Update",
       `Visitor ID ${id} was ${approved ? "approved" : "denied"} by the resident`,
       "visitor_approval",
@@ -157,14 +156,13 @@ exports.getResidentVisitors = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // First, find all flat numbers owned by the resident in the current society
     const flats = await pool.query(
       `SELECT flat_number FROM flats WHERE owner_id = $1 AND society_id = $2`,
       [residentId, societyId]
     );
 
     if (flats.rows.length === 0) {
-      return res.json([]); // Resident doesn't own any flats in this society
+      return res.json([]); 
     }
 
     const flatNumbers = flats.rows.map(f => f.flat_number);
@@ -192,7 +190,7 @@ exports.getAllVisitors = async (req, res) => {
        FROM visitors v
        LEFT JOIN users u ON v.resident_id = u.id
        WHERE v.society_id = $1
-       ORDER BY v.in_time DESC`, // Changed to v.in_time as created_at is not in original schema
+       ORDER BY v.in_time DESC`, 
       [societyId]
     );
 

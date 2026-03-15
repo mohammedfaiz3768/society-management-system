@@ -1,10 +1,6 @@
 const pool = require("../../config/db");
 const { logActivity } = require("../../utils/activityLogger");
 
-/**
- * Create a new society
- * Called during admin first-time login
- */
 exports.createSociety = async (req, res) => {
     const { name, address } = req.body;
     const userId = req.user.id;
@@ -14,7 +10,6 @@ exports.createSociety = async (req, res) => {
     }
 
     try {
-        // Verify user is admin and is_first_login is true
         const userCheck = await pool.query(
             "SELECT * FROM users WHERE id = $1 AND role = $2",
             [userId, "admin"]
@@ -30,7 +25,6 @@ exports.createSociety = async (req, res) => {
             return res.status(400).json({ message: "Society already exists for this admin" });
         }
 
-        // Create society
         const societyResult = await pool.query(
             `INSERT INTO societies (name, address) 
        VALUES ($1, $2) 
@@ -40,7 +34,6 @@ exports.createSociety = async (req, res) => {
 
         const society = societyResult.rows[0];
 
-        // Update user with society_id and mark first login complete
         await pool.query(
             `UPDATE users 
        SET society_id = $1, is_first_login = FALSE 
@@ -68,9 +61,6 @@ exports.createSociety = async (req, res) => {
     }
 };
 
-/**
- * Get current user's society
- */
 exports.getMySociety = async (req, res) => {
     const userId = req.user.id;
 
@@ -94,15 +84,11 @@ exports.getMySociety = async (req, res) => {
     }
 };
 
-/**
- * Update society details
- */
 exports.updateSociety = async (req, res) => {
     const { name, address } = req.body;
     const userId = req.user.id;
 
     try {
-        // Get user's society_id
         const userResult = await pool.query(
             "SELECT society_id, role FROM users WHERE id = $1",
             [userId]
@@ -122,7 +108,6 @@ exports.updateSociety = async (req, res) => {
             return res.status(400).json({ message: "No society found for this user" });
         }
 
-        // Update society
         const result = await pool.query(
             `UPDATE societies 
        SET name = COALESCE($1, name),

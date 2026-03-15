@@ -18,7 +18,6 @@ const requireRole = require("../../middleware/roleMiddleware");
 
 router.use(auth);
 
-// Root route for admin dashboard
 router.get("/", requireRole("admin"), getAllSlots);
 
 router.post("/slot", requireRole("admin"), createSlot);

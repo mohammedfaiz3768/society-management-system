@@ -2,17 +2,15 @@ const ffmpeg = require("fluent-ffmpeg");
 const db = require("../config/db");
 const { admin, isInitialized } = require("../config/firebase");
 
-// AI Placeholder: returns fake AI output
 async function runAiOnFrame(imagePath) {
   return {
-    person_count: Math.floor(Math.random() * 3),  // 0–2 people
+    person_count: Math.floor(Math.random() * 3),  
     motion_level: Math.random(),
     vehicles: [],
     faces: []
   };
 }
 
-// Save AI event in DB
 async function saveEvent(cameraId, snapshotPath, aiData) {
   await db.query(
     `INSERT INTO cctv_events (camera_id, event_type, snapshot_url, ai_data)
@@ -21,7 +19,6 @@ async function saveEvent(cameraId, snapshotPath, aiData) {
   );
 }
 
-// Send alert to admin if needed
 async function sendAlert(cameraId, aiData) {
   if (!isInitialized || !admin) {
     console.warn("Firebase not initialized - skipping AI alert");
@@ -52,7 +49,6 @@ async function sendAlert(cameraId, aiData) {
   }
 }
 
-// AI Engine: capture frame → run AI → store result
 async function analyzeCamera(camera) {
   const snapshot = `snapshots/ai_cam_${camera.id}_${Date.now()}.jpg`;
 
@@ -70,7 +66,6 @@ async function analyzeCamera(camera) {
   });
 }
 
-// Main loop every 10 seconds
 async function startAiLoop() {
   console.log("AI Processor started...");
 

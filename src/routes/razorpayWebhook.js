@@ -20,7 +20,6 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
 
     const event = body.event;
 
-    // Extract Razorpay payment data
     if (event === "payment.captured") {
       const payment = body.payload.payment.entity;
 

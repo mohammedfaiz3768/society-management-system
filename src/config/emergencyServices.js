@@ -1,5 +1,3 @@
-// Emergency Services Configuration
-// Update these numbers based on your region
 module.exports = {
     EMERGENCY_SERVICES: {
         POLICE: {
@@ -19,7 +17,6 @@ module.exports = {
         },
     },
 
-    // SOS Types
     SOS_TYPES: {
         FIRE: "fire",
         MEDICAL: "medical",
@@ -27,7 +24,6 @@ module.exports = {
         GENERAL: "general",
     },
 
-    // Get service for SOS type
     getServiceForType(type) {
         switch (type) {
             case this.SOS_TYPES.FIRE:

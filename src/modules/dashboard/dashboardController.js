@@ -1,7 +1,7 @@
 const pool = require("../../config/db");
 
 exports.getAdminStats = async (req, res) => {
-  const societyId = req.societyId; // Filter all stats by society
+  const societyId = req.societyId; 
 
   try {
     const [

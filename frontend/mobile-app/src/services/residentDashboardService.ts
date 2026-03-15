@@ -11,8 +11,8 @@ export interface ResidentStats {
     services_open: number;
     today_visitors: number;
     notifications_unread: number;
-    upcoming_events: any[]; // refine type if needed
-    latest_announcements: any[]; // refine type if needed
+    upcoming_events: any[]; 
+    latest_announcements: any[]; 
 }
 
 export const getResidentStats = async (): Promise<ResidentStats> => {

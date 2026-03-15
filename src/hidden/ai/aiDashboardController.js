@@ -1,8 +1,5 @@
 const db = require("../../config/db");
 
-// ========================================================
-// 📊 1. Summary Stats for Dashboard (Top Cards)
-// ========================================================
 exports.getSummaryStats = async (req, res) => {
   try {
     const totalEvents = await db.query(
@@ -35,9 +32,6 @@ exports.getSummaryStats = async (req, res) => {
   }
 };
 
-// ========================================================
-// 📈 2. AI Event Trend (Last 30 Days)
-// ========================================================
 exports.getEventTrend = async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -57,9 +51,6 @@ exports.getEventTrend = async (req, res) => {
   }
 };
 
-// ========================================================
-// 🎥 3. Events by Camera
-// ========================================================
 exports.getCameraStats = async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -81,9 +72,6 @@ exports.getCameraStats = async (req, res) => {
   }
 };
 
-// ========================================================
-// 🔥 4. Critical Alerts (Last 20)
-// ========================================================
 exports.getCriticalAlerts = async (req, res) => {
   try {
     const { rows } = await db.query(`
@@ -100,9 +88,6 @@ exports.getCriticalAlerts = async (req, res) => {
   }
 };
 
-// ========================================================
-// 📰 5. Recent Events Feed (Latest 50)
-// ========================================================
 exports.getRecentEvents = async (req, res) => {
   try {
     const { rows } = await db.query(`

@@ -2,7 +2,6 @@ const db = require("../../config/db");
 const crypto = require("crypto");
 const { sendEmail } = require("../../utils/emailService");
 
-// Society registration (public - no auth)
 exports.registerSociety = async (req, res) => {
     try {
         const {
@@ -17,14 +16,12 @@ exports.registerSociety = async (req, res) => {
             admin_phone,
         } = req.body;
 
-        // Validate required fields
         if (!society_name || !admin_email || !admin_name) {
             return res.status(400).json({
                 error: "Society name, admin name, and email are required",
             });
         }
 
-        // Check if society name already exists
         const existingCheck = await db.query(
             `SELECT id FROM societies WHERE LOWER(name) = LOWER($1)`,
             [society_name]
@@ -36,7 +33,6 @@ exports.registerSociety = async (req, res) => {
             });
         }
 
-        // Check if admin email already exists
         const emailCheck = await db.query(
             `SELECT id FROM users WHERE email = $1`,
             [admin_email]
@@ -48,10 +44,8 @@ exports.registerSociety = async (req, res) => {
             });
         }
 
-        // Generate verification token
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
-        // Create society (pending status initially)
         const societyResult = await db.query(
             `INSERT INTO societies 
        (name, address, city, state, pincode, total_units, admin_email, admin_phone, 
@@ -74,7 +68,6 @@ exports.registerSociety = async (req, res) => {
 
         const society = societyResult.rows[0];
 
-        // Send verification email
         const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
         await sendEmail({
@@ -109,12 +102,10 @@ exports.registerSociety = async (req, res) => {
     }
 };
 
-// Verify email and activate society
 exports.verifyEmail = async (req, res) => {
     try {
         const { token } = req.params;
 
-        // Find society by token
         const societyResult = await db.query(
             `SELECT * FROM societies WHERE registration_token = $1 AND status = 'pending'`,
             [token]
@@ -128,7 +119,6 @@ exports.verifyEmail = async (req, res) => {
 
         const society = societyResult.rows[0];
 
-        // Check if token is older than 24 hours
         const createdAt = new Date(society.created_at);
         const now = new Date();
         const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
@@ -139,11 +129,9 @@ exports.verifyEmail = async (req, res) => {
             });
         }
 
-        // Calculate trial end date (30 days from now)
         const trialEndsAt = new Date();
         trialEndsAt.setDate(trialEndsAt.getDate() + 30);
 
-        // Activate society
         await db.query(
             `UPDATE societies 
        SET status = 'active', 
@@ -154,7 +142,6 @@ exports.verifyEmail = async (req, res) => {
             [trialEndsAt, society.id]
         );
 
-        // Create admin user
         const userResult = await db.query(
             `INSERT INTO users 
        (name, email, phone, role, society_id, is_first_login)
@@ -163,7 +150,6 @@ exports.verifyEmail = async (req, res) => {
             [society.created_by, society.admin_email, society.admin_phone, society.id]
         );
 
-        // Send welcome email
         await sendEmail({
             to: society.admin_email,
             subject: "Welcome! Your Society is Now Active 🎉",
@@ -196,7 +182,6 @@ exports.verifyEmail = async (req, res) => {
     }
 };
 
-// Check society name availability (public)
 exports.checkAvailability = async (req, res) => {
     try {
         const { name } = req.query;
@@ -219,7 +204,6 @@ exports.checkAvailability = async (req, res) => {
     }
 };
 
-// Resend verification email
 exports.resendVerification = async (req, res) => {
     try {
         const { email } = req.body;
@@ -237,7 +221,6 @@ exports.resendVerification = async (req, res) => {
 
         const society = result.rows[0];
 
-        // Generate new token
         const newToken = crypto.randomBytes(32).toString("hex");
         await db.query(
             `UPDATE societies SET registration_token = $1 WHERE id = $2`,

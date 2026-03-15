@@ -1,7 +1,6 @@
 const pool = require("../../config/db");
 const { sendNotification } = require("../../utils/sendNotification");
 
-// AUTO STATUS HANDLER (helper)
 async function autoUpdateStatus() {
   await pool.query(`
     UPDATE outages 
@@ -20,7 +19,6 @@ async function autoUpdateStatus() {
   `);
 }
 
-// ADMIN: create outage
 exports.createOutage = async (req, res) => {
   const adminId = req.user.id;
   const { type, title, description, start_time, end_time } = req.body;
@@ -40,7 +38,6 @@ exports.createOutage = async (req, res) => {
 
     const outage = result.rows[0];
 
-    // Notify all residents
     const residents = await pool.query(
       `SELECT id FROM users WHERE role='resident'`
     );
@@ -62,7 +59,6 @@ exports.createOutage = async (req, res) => {
   }
 };
 
-// ADMIN: update outage
 exports.updateOutage = async (req, res) => {
   const { id } = req.params;
   const { type, title, description, start_time, end_time, status } = req.body;
@@ -86,7 +82,6 @@ exports.updateOutage = async (req, res) => {
   }
 };
 
-// ADMIN: cancel outage
 exports.cancelOutage = async (req, res) => {
   const { id } = req.params;
 
@@ -103,7 +98,6 @@ exports.cancelOutage = async (req, res) => {
   }
 };
 
-// RESIDENT + ADMIN: Get all outages
 exports.getAllOutages = async (req, res) => {
   try {
     await autoUpdateStatus();
@@ -122,7 +116,6 @@ exports.getAllOutages = async (req, res) => {
   }
 };
 
-// RESIDENT + ADMIN: Get upcoming outages
 exports.getUpcomingOutages = async (req, res) => {
   try {
     await autoUpdateStatus();
@@ -140,7 +133,6 @@ exports.getUpcomingOutages = async (req, res) => {
   }
 };
 
-// RESIDENT + ADMIN: Get active outages
 exports.getActiveOutages = async (req, res) => {
   try {
     await autoUpdateStatus();

@@ -2,8 +2,7 @@ const pool = require("../config/db");
 
 async function logActivity({ userId, type, entityType, entityId, title, description, societyId }) {
   try {
-    // Map to actual schema columns: action, entity_type, entity_id, details
-    const action = title || type; // Use title if provided, fallback to type
+    const action = title || type; 
     const details = description || '';
 
     await pool.query(
@@ -13,7 +12,6 @@ async function logActivity({ userId, type, entityType, entityId, title, descript
     );
   } catch (err) {
     console.error('logActivity error:', err);
-    // Don't throw - activity logging failure shouldn't break the main flow
   }
 }
 

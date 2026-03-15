@@ -151,7 +151,6 @@ const staffService = {
     },
 
     async markStaffEntry({ staff_id, resident_id, marked_by }) {
-        // Validate assignment
         const assignment = await pool.query(
             `SELECT * FROM staff_assignments
        WHERE staff_id = $1 AND resident_id = $2`,
@@ -169,7 +168,6 @@ const staffService = {
             };
         }
 
-        // Insert attendance
         const result = await pool.query(
             `INSERT INTO staff_attendance (staff_id, resident_id, entry_date, entry_time, marked_by)
        VALUES ($1, $2, CURRENT_DATE, NOW(), $3)
@@ -177,7 +175,6 @@ const staffService = {
             [staff_id, resident_id, marked_by]
         );
 
-        // Send notification
         await sendNotification(resident_id, {
             title: "Staff Entry",
             body: `Your staff has entered the society.`,

@@ -8,20 +8,13 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-/**
- * Send email with optional HTML template
- * @param {string} to - Receiver email
- * @param {string} subject - Email subject
- * @param {string} text - OTP or message text
- * @param {string|null} html - Optional HTML content
- */
 exports.sendEmail = async (to, subject, text, html = null) => {
     try {
         await transporter.sendMail({
             from: `"UNIFY App" <${process.env.EMAIL_USER}>`,
             to,
             subject,
-            text,          // fallback if HTML fails
+            text,          
             html: html || `
                 <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
                     <h2 style="color:#2c7be5;">Your Login OTP</h2>

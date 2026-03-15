@@ -53,10 +53,8 @@ export const useAuthStore = create<AuthState>()(
             logout: () => {
                 console.log('[AuthStore] LOGOUT action called');
                 set({ token: null, user: null, userRole: null, societyId: null });
-                // Note: Navigation handled by _layout.tsx useEffect watching token changes
             },
             loadUser: async () => {
-                // augment this if needed, but persist middleware handles hydration
                 return Promise.resolve();
             },
         }),

@@ -39,14 +39,12 @@ export async function registerForPushNotificationsAsync() {
             return;
         }
 
-        // Get the token that uniquely identifies this device
         token = (await Notifications.getExpoPushTokenAsync({
             projectId: Constants.expoConfig?.extra?.eas?.projectId,
         })).data;
 
         console.log("Expo Push Token:", token);
     } else {
-        // alert('Must use physical device for Push Notifications');
         console.log("Not a physical device, skipping push token");
     }
 

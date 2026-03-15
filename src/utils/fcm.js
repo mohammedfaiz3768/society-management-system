@@ -1,7 +1,6 @@
 const { admin, isInitialized } = require("../config/firebase");
 const pool = require("../config/db");
 
-// Send notification to one user
 async function sendToUser(userId, title, body, data = {}) {
   if (!isInitialized || !admin) {
     console.warn("Firebase not initialized - skipping FCM notification");
@@ -31,7 +30,6 @@ async function sendToUser(userId, title, body, data = {}) {
   }
 }
 
-// Send notification to ALL residents
 async function sendToAllResidents(title, body, data = {}) {
   if (!isInitialized || !admin) {
     console.warn("Firebase not initialized - skipping FCM notification");

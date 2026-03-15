@@ -8,9 +8,9 @@ export interface Poll {
     is_anonymous: boolean;
     created_at: string;
     end_date: string;
-    expires_at?: string; // keeping for backward compatibility if needed, but end_date is primary
+    expires_at?: string; 
     options: { id: number; text: string; votes: number }[];
-    user_voted?: boolean; // Backend should ideally tell us if we voted
+    user_voted?: boolean; 
 }
 
 export const getActivePolls = async (): Promise<Poll[]> => {

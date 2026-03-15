@@ -1,6 +1,5 @@
 const pool = require("../../config/db");
 
-// Get all my notifications
 exports.getMyNotifications = async (req, res) => {
   const userId = req.user.id;
   const societyId = req.societyId;
@@ -21,7 +20,6 @@ exports.getMyNotifications = async (req, res) => {
   }
 };
 
-// Mark notification as read
 exports.markAsRead = async (req, res) => {
   const userId = req.user.id;
   const { id } = req.params;
@@ -41,7 +39,6 @@ exports.markAsRead = async (req, res) => {
   }
 };
 
-// Delete notification
 exports.deleteNotification = async (req, res) => {
   const userId = req.user.id;
   const { id } = req.params;

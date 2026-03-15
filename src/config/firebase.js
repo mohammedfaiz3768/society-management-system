@@ -2,13 +2,11 @@ const admin = require("firebase-admin");
 const fs = require("fs");
 const path = require("path");
 
-// Try to load service account from file, fallback to environment variable
 const serviceAccountPath = path.join(__dirname, "../../firebase-service-account.json");
 let firebaseInitialized = false;
 
 try {
   if (fs.existsSync(serviceAccountPath)) {
-    // Use service account file if available
     const serviceAccount = require("../../firebase-service-account.json");
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
@@ -16,7 +14,6 @@ try {
     firebaseInitialized = true;
     console.log("✅ Firebase initialized with service account file");
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    // Use environment variable (JSON string)
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),

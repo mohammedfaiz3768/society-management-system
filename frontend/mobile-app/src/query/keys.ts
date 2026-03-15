@@ -1,22 +1,9 @@
-/**
- * Query Key Factory
- * 
- * Centralized query key management for React Query.
- * 
- * Benefits:
- * 1. Type-safe query keys
- * 2. Easy cache invalidation (invalidate all gatePasses with queryKeys.gatePass.all)
- * 3. Prevents key conflicts across the app
- */
-
 export const queryKeys = {
-    // Authentication
     auth: {
         user: ['auth', 'user'] as const,
         session: ['auth', 'session'] as const,
     },
 
-    // Gate Pass
     gatePass: {
         all: ['gate-pass'] as const,
         lists: () => [...queryKeys.gatePass.all, 'list'] as const,
@@ -27,7 +14,6 @@ export const queryKeys = {
         verify: (qrData: string) => [...queryKeys.gatePass.all, 'verify', qrData] as const,
     },
 
-    // Visitors
     visitor: {
         all: ['visitor'] as const,
         lists: () => [...queryKeys.visitor.all, 'list'] as const,
@@ -37,7 +23,6 @@ export const queryKeys = {
         detail: (id: string) => [...queryKeys.visitor.details(), id] as const,
     },
 
-    // Deliveries
     delivery: {
         all: ['delivery'] as const,
         lists: () => [...queryKeys.delivery.all, 'list'] as const,
@@ -45,7 +30,6 @@ export const queryKeys = {
             [...queryKeys.delivery.lists(), filters] as const,
     },
 
-    // Complaints
     complaint: {
         all: ['complaint'] as const,
         lists: () => [...queryKeys.complaint.all, 'list'] as const,
@@ -55,7 +39,6 @@ export const queryKeys = {
         detail: (id: string) => [...queryKeys.complaint.details(), id] as const,
     },
 
-    // Billing
     billing: {
         all: ['billing'] as const,
         invoices: () => [...queryKeys.billing.all, 'invoices'] as const,
@@ -63,14 +46,12 @@ export const queryKeys = {
         payments: () => [...queryKeys.billing.all, 'payments'] as const,
     },
 
-    // Staff
     staff: {
         all: ['staff'] as const,
         my: () => [...queryKeys.staff.all, 'my'] as const,
         attendance: (staffId: string) => [...queryKeys.staff.all, 'attendance', staffId] as const,
     },
 
-    // Community
     notice: {
         all: ['notice'] as const,
         lists: () => [...queryKeys.notice.all, 'list'] as const,
@@ -90,7 +71,6 @@ export const queryKeys = {
         active: () => [...queryKeys.poll.all, 'active'] as const,
     },
 
-    // SOS
     sos: {
         all: ['sos'] as const,
         active: () => [...queryKeys.sos.all, 'active'] as const,

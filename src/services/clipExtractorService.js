@@ -1,13 +1,10 @@
 const db = require("../config/db");
 
-// Media server integration pending
 async function extractClipForEvent(event) {
   console.log("🎥 Generating clip for AI event:", event.id);
 
-  // Simulate processing delay
   await new Promise(r => setTimeout(r, 1000));
 
-  // Dummy URL (later: real clip from RTSP server)
   const clip_url = `/clips/event_${event.id}.mp4`;
 
   await db.query(

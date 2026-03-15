@@ -3,7 +3,7 @@ const { logActivity } = require("../../utils/activityLogger");
 
 exports.createComplaint = async (req, res) => {
   const userId = req.user.id;
-  const societyId = req.societyId; // From society middleware
+  const societyId = req.societyId; 
   const { title, description } = req.body;
 
   if (!title) {
@@ -56,7 +56,7 @@ exports.getMyComplaints = async (req, res) => {
 };
 
 exports.getAllComplaints = async (req, res) => {
-  const societyId = req.societyId; // Admin only sees their society
+  const societyId = req.societyId; 
 
   try {
     const result = await pool.query(

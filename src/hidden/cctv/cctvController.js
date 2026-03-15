@@ -1,6 +1,5 @@
 const db = require("../../config/db");
 
-// Add camera
 exports.addCamera = async (req, res) => {
   try {
     const { name, location, rtsp_url } = req.body;
@@ -18,7 +17,6 @@ exports.addCamera = async (req, res) => {
   }
 };
 
-// List cameras
 exports.listCameras = async (req, res) => {
   try {
     const result = await db.query(`SELECT * FROM cctv_cameras ORDER BY id ASC`);
@@ -28,7 +26,6 @@ exports.listCameras = async (req, res) => {
   }
 };
 
-// Assign camera to user
 exports.assignCamera = async (req, res) => {
   try {
     const { user_id, camera_id } = req.body;
@@ -46,7 +43,6 @@ exports.assignCamera = async (req, res) => {
   }
 };
 
-// Get user's cameras
 exports.getMyCameras = async (req, res) => {
   try {
     const userId = req.user.id;

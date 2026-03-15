@@ -2,7 +2,6 @@ const pool = require("../config/db");
 const { sendNotification } = require("../utils/sendNotification");
 const { logActivity } = require("../utils/activityLogger");
 
-// RESIDENT: Create service request
 exports.createRequest = async (req, res) => {
   const userId = req.user.id;
   const { category, priority, description } = req.body;
@@ -28,7 +27,6 @@ exports.createRequest = async (req, res) => {
 
     const request = result.rows[0];
 
-    // Notify admin
     const admins = await pool.query(
       `SELECT id FROM users WHERE role = 'admin'`
     );
@@ -43,7 +41,6 @@ exports.createRequest = async (req, res) => {
       );
     }
 
-    // 🟦 Log Activity
     await logActivity({
       userId,
       type: "service_request_created",
@@ -60,7 +57,6 @@ exports.createRequest = async (req, res) => {
   }
 };
 
-// RESIDENT: My requests
 exports.getMyRequests = async (req, res) => {
   const userId = req.user.id;
 
@@ -77,7 +73,6 @@ exports.getMyRequests = async (req, res) => {
   }
 };
 
-// ADMIN: Get all service requests
 exports.getAllRequests = async (req, res) => {
   try {
     const result = await pool.query(
@@ -95,7 +90,6 @@ exports.getAllRequests = async (req, res) => {
   }
 };
 
-// ADMIN: Assign a staff member
 exports.assignStaff = async (req, res) => {
   const { request_id, staff_id } = req.body;
 
@@ -114,7 +108,6 @@ exports.assignStaff = async (req, res) => {
 
     const ticket = updated.rows[0];
 
-    // Notify resident
     sendNotification(
       ticket.user_id,
       "Service Request Update",
@@ -123,7 +116,6 @@ exports.assignStaff = async (req, res) => {
       req
     );
 
-    // 🟧 Log Activity
     await logActivity({
       userId: req.user.id,
       type: "service_assigned",
@@ -140,7 +132,6 @@ exports.assignStaff = async (req, res) => {
   }
 };
 
-// STAFF/ADMIN: Update status (in_progress / completed)
 exports.updateStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -163,7 +154,6 @@ exports.updateStatus = async (req, res) => {
 
     const ticket = updated.rows[0];
 
-    // Notify resident
     sendNotification(
       ticket.user_id,
       "Service Request Update",
@@ -172,7 +162,6 @@ exports.updateStatus = async (req, res) => {
       req
     );
 
-    // 🟥 Log Activity
     await logActivity({
       userId: req.user.id,
       type: "service_status_update",

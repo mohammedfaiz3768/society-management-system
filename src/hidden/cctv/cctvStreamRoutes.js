@@ -1,17 +1,14 @@
-// src/routes/cctvStreamRoutes.js
 const express = require("express");
 const router = express.Router();
 const auth = require("../../middleware/authMiddleware");
 const db = require("../../config/db");
 
-// Helper: is admin / security?
 function isPrivileged(user) {
   if (!user || !user.role) return false;
   const role = String(user.role).toUpperCase();
   return role === "ADMIN" || role === "SECURITY";
 }
 
-// GET /api/cctv-stream/proxy/:cameraId?key=xxxx
 router.get("/proxy/:cameraId", auth, async (req, res) => {
   try {
     const user = req.user;
@@ -22,7 +19,6 @@ router.get("/proxy/:cameraId", auth, async (req, res) => {
       return res.status(400).json({ error: "Invalid cameraId" });
     }
 
-    // 1️⃣ Check subscription (no CCTV for free users)
     const userRow = await db.query(
       `SELECT id, subscription FROM users WHERE id = $1`,
       [user.id]
@@ -40,7 +36,6 @@ router.get("/proxy/:cameraId", auth, async (req, res) => {
         .json({ error: "Upgrade plan to access CCTV streams." });
     }
 
-    // 2️⃣ Load camera (and stream_path)
     const camResult = await db.query(
       `SELECT id, name, stream_path FROM cctv_cameras WHERE id = $1`,
       [cameraId]
@@ -58,10 +53,7 @@ router.get("/proxy/:cameraId", auth, async (req, res) => {
         .json({ error: "Camera stream not configured on server" });
     }
 
-    // 3️⃣ PERMISSION LOGIC
-    // Admin / Security -> full direct access (no key needed)
     if (!isPrivileged(user)) {
-      // Resident -> MUST have a valid access key from admin
       if (!accessKey) {
         return res
           .status(403)
@@ -85,14 +77,12 @@ router.get("/proxy/:cameraId", auth, async (req, res) => {
       }
     }
 
-    // 4️⃣ Log access
     await db.query(
       `INSERT INTO camera_access_logs (user_id, camera_id, key_used)
        VALUES ($1, $2, $3)`,
       [user.id, cameraId, accessKey]
     );
 
-    // 5️⃣ Build proxy URL (we NEVER send RTSP / NVR IP)
     const base = process.env.CCTV_PUBLIC_STREAM_BASE;
     if (!base) {
       return res
@@ -100,10 +90,8 @@ router.get("/proxy/:cameraId", auth, async (req, res) => {
         .json({ error: "CCTV_PUBLIC_STREAM_BASE not configured" });
     }
 
-    // final HLS URL used by the player in app
     const streamUrl = `${base.replace(/\/$/, "")}/${camera.stream_path}`;
 
-    // You can return JSON (mobile app will use this URL in a video player)
     return res.json({
       success: true,
       camera: {

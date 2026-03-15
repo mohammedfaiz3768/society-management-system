@@ -11,7 +11,6 @@ const {
   getRecentEvents
 } = require("./aiDashboardController");
 
-// Admin-only access
 router.get("/summary", auth, requireRole("admin"), getSummaryStats);
 router.get("/trend", auth, requireRole("admin"), getEventTrend);
 router.get("/cameras", auth, requireRole("admin"), getCameraStats);

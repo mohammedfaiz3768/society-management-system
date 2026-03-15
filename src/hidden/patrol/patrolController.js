@@ -1,7 +1,6 @@
 const pool = require("../../config/db");
-const { logActivity } = require("../utils/activityLogger"); // ➕ added
+const { logActivity } = require("../utils/activityLogger"); 
 
-// ADMIN: Create a checkpoint
 exports.createCheckpoint = async (req, res) => {
   const { name, location_description, sequence_order } = req.body;
 
@@ -18,7 +17,6 @@ exports.createCheckpoint = async (req, res) => {
 
     const checkpoint = result.rows[0];
 
-    // 🟦 Log Activity
     await logActivity({
       userId: req.user.id,
       type: "checkpoint_created",
@@ -35,7 +33,6 @@ exports.createCheckpoint = async (req, res) => {
   }
 };
 
-// ADMIN: Get all checkpoints
 exports.getAllCheckpoints = async (req, res) => {
   try {
     const result = await pool.query(
@@ -49,7 +46,6 @@ exports.getAllCheckpoints = async (req, res) => {
   }
 };
 
-// ADMIN: Assign guard for patrol for the day
 exports.assignGuard = async (req, res) => {
   const { guard_id, scheduled_date } = req.body;
 
@@ -66,7 +62,6 @@ exports.assignGuard = async (req, res) => {
 
     const assignment = result.rows[0];
 
-    // 🟧 Log Activity
     await logActivity({
       userId: req.user.id,
       type: "patrol_assigned",
@@ -83,7 +78,6 @@ exports.assignGuard = async (req, res) => {
   }
 };
 
-// GUARD: Check in at a checkpoint
 exports.checkIn = async (req, res) => {
   const guardId = req.user.id;
   const { checkpoint_id, notes } = req.body;
@@ -101,7 +95,6 @@ exports.checkIn = async (req, res) => {
 
     const logEntry = result.rows[0];
 
-    // 🟩 Log Activity
     await logActivity({
       userId: guardId,
       type: "patrol_checkin",
@@ -118,7 +111,6 @@ exports.checkIn = async (req, res) => {
   }
 };
 
-// ADMIN: Get patrol logs
 exports.getPatrolLogs = async (req, res) => {
   try {
     const result = await pool.query(
@@ -136,7 +128,6 @@ exports.getPatrolLogs = async (req, res) => {
   }
 };
 
-// ADMIN: Daily Patrol Summary
 exports.getDailySummary = async (req, res) => {
   const { date } = req.query;
 

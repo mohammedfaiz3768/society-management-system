@@ -11,13 +11,10 @@ const {
 
 router.use(auth);
 
-// get all notifications for user
 router.get("/", getMyNotifications);
 
-// mark single notification as read
 router.put("/:id/read", markAsRead);
 
-// delete notification
 router.delete("/:id", deleteNotification);
 
 module.exports = router;

@@ -1,10 +1,8 @@
 const pool = require("../../config/db");
 const { sendNotification } = require("../utils/sendNotification");
-const { logActivity } = require("../utils/activityLogger"); // ➕ added
+const { logActivity } = require("../utils/activityLogger"); 
 
-// Utility: Ensure a chat room exists between two users
 async function getOrCreateRoom(user1, user2, societyId) {
-  // Sort users (to avoid duplicates like 4-8 or 8-4)
   const u1 = Math.min(user1, user2);
   const u2 = Math.max(user1, user2);
 
@@ -24,7 +22,6 @@ async function getOrCreateRoom(user1, user2, societyId) {
 
   const newRoom = created.rows[0];
 
-  // 🟦 Log Activity — New chat room created
   await logActivity({
     userId: user1,
     type: "chat_room_created",
@@ -37,7 +34,6 @@ async function getOrCreateRoom(user1, user2, societyId) {
   return newRoom;
 }
 
-// SEND MESSAGE
 exports.sendMessage = async (req, res) => {
   const senderId = req.user.id;
   const societyId = req.societyId;
@@ -47,10 +43,8 @@ exports.sendMessage = async (req, res) => {
     return res.status(400).json({ message: "receiver_id and message required" });
 
   try {
-    // Ensure room exists (and log if newly created)
     const room = await getOrCreateRoom(senderId, receiver_id, societyId);
 
-    // Save message in DB
     const result = await pool.query(
       `INSERT INTO chat_messages (room_id, sender_id, message)
        VALUES ($1, $2, $3)
@@ -60,7 +54,6 @@ exports.sendMessage = async (req, res) => {
 
     const msg = result.rows[0];
 
-    // 🔵 Log Activity — Message sent
     await logActivity({
       userId: senderId,
       type: "chat_message_sent",
@@ -70,7 +63,6 @@ exports.sendMessage = async (req, res) => {
       description: `To User ${receiver_id}: ${message.substring(0, 50)}`
     });
 
-    // Realtime notify receiver
     const io = req.app.get("socketio");
     const onlineUsers = req.app.get("onlineUsers");
     const receiverSocket = onlineUsers[receiver_id];
@@ -84,7 +76,6 @@ exports.sendMessage = async (req, res) => {
       });
     }
 
-    // Push notification
     sendNotification(
       receiver_id,
       "New Message",
@@ -100,7 +91,6 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
-// GET ALL ROOMS FOR CURRENT USER
 exports.getMyChats = async (req, res) => {
   const userId = req.user.id;
 
@@ -123,7 +113,6 @@ exports.getMyChats = async (req, res) => {
   }
 };
 
-// GET MESSAGES OF A ROOM
 exports.getMessages = async (req, res) => {
   const { room_id } = req.params;
   const userId = req.user.id;
@@ -136,7 +125,6 @@ exports.getMessages = async (req, res) => {
       [room_id]
     );
 
-    // Mark all messages from others as read
     await pool.query(
       `UPDATE chat_messages SET is_read = TRUE
        WHERE room_id = $1 AND sender_id != $2`,

@@ -16,7 +16,7 @@ export interface Poll {
     end_date: string;
     created_at: string;
     options: PollOption[];
-    user_voted_option_id?: number | null; // Helper if backend provided this
+    user_voted_option_id?: number | null; 
 }
 
 export const getActivePolls = async (): Promise<Poll[]> => {

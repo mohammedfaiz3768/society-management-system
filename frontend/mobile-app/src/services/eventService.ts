@@ -10,7 +10,6 @@ export interface Event {
 }
 
 export const getEvents = async (): Promise<Event[]> => {
-    // Assuming backend endpoint exists or mapped to announcements
     const { data } = await apiClient.get('/events');
     return data;
 };

@@ -22,8 +22,6 @@ exports.sendEmail = async ({ to, subject, html }) => {
         return true;
     } catch (error) {
         console.error("Email Error:", error);
-        // In production, you might want to throw error or handle it differently
-        // For now, logging it is enough
         return false;
     }
 };

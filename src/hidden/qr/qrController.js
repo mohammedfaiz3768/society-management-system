@@ -1,14 +1,12 @@
 const pool = require("../../config/db");
 const { generateQrString } = require("../../utils/generateQrCode");
 const { sendNotification } = require("../../utils/sendNotification");
-const { logActivity } = require("../../utils/activityLogger"); // ➕ added
+const { logActivity } = require("../../utils/activityLogger"); 
 
-// RESIDENT: Generate / Regenerate QR code
 exports.generateResidentQr = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // get user flat
     const user = await pool.query(
       `SELECT flat_number FROM users WHERE id = $1`,
       [userId]
@@ -21,10 +19,8 @@ exports.generateResidentQr = async (req, res) => {
 
     const qr = generateQrString();
 
-    // delete old QR if exists
     await pool.query(`DELETE FROM resident_qr WHERE user_id = $1`, [userId]);
 
-    // insert new qr
     const result = await pool.query(
       `INSERT INTO resident_qr (user_id, flat_number, qr_code)
        VALUES ($1, $2, $3)
@@ -34,7 +30,6 @@ exports.generateResidentQr = async (req, res) => {
 
     const qrEntry = result.rows[0];
 
-    // 🟦 Log Activity
     await logActivity({
       userId,
       type: "qr_generated",
@@ -51,7 +46,6 @@ exports.generateResidentQr = async (req, res) => {
   }
 };
 
-// RESIDENT: Get my QR code
 exports.getMyQr = async (req, res) => {
   const userId = req.user.id;
 
@@ -68,7 +62,6 @@ exports.getMyQr = async (req, res) => {
   }
 };
 
-// RESIDENT: Create visitor QR pre-approval
 exports.createVisitorQr = async (req, res) => {
   const userId = req.user.id;
   const { visitor_name, valid_minutes } = req.body;
@@ -77,7 +70,6 @@ exports.createVisitorQr = async (req, res) => {
     return res.status(400).json({ message: "visitor_name is required" });
 
   try {
-    // get flat
     const user = await pool.query(
       `SELECT flat_number FROM users WHERE id = $1`,
       [userId]
@@ -97,7 +89,6 @@ exports.createVisitorQr = async (req, res) => {
 
     const qrEntry = result.rows[0];
 
-    // 🟧 Log Activity
     await logActivity({
       userId,
       type: "visitor_qr_created",
@@ -114,13 +105,11 @@ exports.createVisitorQr = async (req, res) => {
   }
 };
 
-// GUARD: Scan QR code
 exports.scanQr = async (req, res) => {
   const guardId = req.user.id;
   const { qr_code } = req.body;
 
   try {
-    // Check resident QR
     const residentQR = await pool.query(
       `SELECT user_id, flat_number FROM resident_qr WHERE qr_code = $1`,
       [qr_code]
@@ -135,7 +124,6 @@ exports.scanQr = async (req, res) => {
         [qr_code, guardId]
       );
 
-      // 🟩 Log Activity
       await logActivity({
         userId: guardId,
         type: "qr_scan_success",
@@ -153,7 +141,6 @@ exports.scanQr = async (req, res) => {
       });
     }
 
-    // Check visitor QR
     const visitorQR = await pool.query(
       `SELECT * FROM visitor_qr WHERE qr_code = $1`,
       [qr_code]
@@ -176,7 +163,6 @@ exports.scanQr = async (req, res) => {
         ]
       );
 
-      // 🟦 Log Activity
       await logActivity({
         userId: guardId,
         type: expired ? "qr_scan_failed" : "qr_scan_success",
@@ -197,14 +183,12 @@ exports.scanQr = async (req, res) => {
       });
     }
 
-    // No match → invalid QR
     await pool.query(
       `INSERT INTO qr_scan_logs (qr_type, qr_code, scanned_by, result, reason)
        VALUES ('unknown', $1, $2, 'denied', 'Invalid QR')`,
       [qr_code, guardId]
     );
 
-    // 🟥 Log Activity
     await logActivity({
       userId: guardId,
       type: "qr_scan_failed",
@@ -224,7 +208,6 @@ exports.scanQr = async (req, res) => {
   }
 };
 
-// ADMIN: View QR logs
 exports.getQrLogs = async (req, res) => {
   try {
     const result = await pool.query(`

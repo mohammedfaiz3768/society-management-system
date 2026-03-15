@@ -1,22 +1,15 @@
 const db = require("../../config/db");
 const crypto = require("crypto");
 
-// =========================================
-// Generate 15-minute access token
-// =========================================
 function generateAccessToken() {
   return "KEY-" + crypto.randomBytes(16).toString("hex").toUpperCase();
 }
 
-// =========================================
-// 1️⃣ Resident requests CCTV access
-// =========================================
 exports.requestAccess = async (req, res) => {
   try {
     const userId = req.user.id;
     const { camera_id } = req.body;
 
-    // Check user subscription (BASIC or PREMIUM)
     const user = await db.query(
       "SELECT subscription_tier FROM users WHERE id = $1",
       [userId]
@@ -32,7 +25,6 @@ exports.requestAccess = async (req, res) => {
       });
     }
 
-    // Create access request
     const request = await db.query(
       `INSERT INTO cctv_access_requests (user_id, camera_id)
        VALUES ($1, $2) RETURNING *`,
@@ -50,15 +42,11 @@ exports.requestAccess = async (req, res) => {
   }
 };
 
-// =========================================
-// 2️⃣ Admin approves access request
-// =========================================
 exports.approveRequest = async (req, res) => {
   try {
     const adminId = req.user.id;
     const { request_id } = req.body;
 
-    // Update status → APPROVED
     const update = await db.query(
       `UPDATE cctv_access_requests
        SET status='APPROVED', admin_id=$1, approved_at=NOW(),
@@ -73,7 +61,6 @@ exports.approveRequest = async (req, res) => {
 
     const reqData = update.rows[0];
 
-    // Generate access token
     const token = generateAccessToken();
 
     await db.query(
@@ -101,9 +88,6 @@ exports.approveRequest = async (req, res) => {
   }
 };
 
-// =========================================
-// 3️⃣ Admin rejects request
-// =========================================
 exports.rejectRequest = async (req, res) => {
   try {
     const adminId = req.user.id;
@@ -127,9 +111,6 @@ exports.rejectRequest = async (req, res) => {
   }
 };
 
-// =========================================
-// 4️⃣ Validate token before streaming
-// =========================================
 exports.validateToken = async (req, res) => {
   try {
     const { token, camera_id } = req.query;

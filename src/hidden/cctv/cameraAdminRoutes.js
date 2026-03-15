@@ -5,7 +5,6 @@ const requireRole = require("../../middleware/roleMiddleware");
 const db = require("../../config/db");
 const crypto = require("crypto");
 
-// Admin approves request → generates key
 router.post("/approve", auth, requireRole("admin"), async (req, res) => {
   try {
     const { request_id, duration_minutes } = req.body;
@@ -21,17 +20,15 @@ router.post("/approve", auth, requireRole("admin"), async (req, res) => {
 
     const request = reqData.rows[0];
 
-    const accessKey = crypto.randomBytes(16).toString("hex"); // unique key
+    const accessKey = crypto.randomBytes(16).toString("hex"); 
     const expiresAt = new Date(Date.now() + (duration_minutes || 10) * 60000);
 
-    // Save key
     await db.query(
       `INSERT INTO camera_access_keys (key, user_id, camera_id, expires_at)
        VALUES ($1,$2,$3,$4)`,
       [accessKey, request.user_id, request.camera_id, expiresAt]
     );
 
-    // Mark request approved
     await db.query(
       `UPDATE camera_access_requests
        SET status='APPROVED', responded_at=NOW()

@@ -19,7 +19,6 @@ app.use(
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
-// Import middlewares
 const authMiddleware = require("./middleware/authMiddleware");
 const societyMiddleware = require("./middleware/societyMiddleware");
 
@@ -29,13 +28,11 @@ app.get("/", (req, res) => {
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Auth routes (no society filtering needed)
 app.use("/api/auth", require("./modules/auth"));
 
-// Apply auth and society middleware to all protected routes
 app.use("/api/users", authMiddleware, societyMiddleware, require("./modules/users"));
 app.use("/api/flats", authMiddleware, societyMiddleware, require("./modules/flat"));
-app.use("/api/societies", require("./modules/societies")); // Has own auth checks
+app.use("/api/societies", require("./modules/societies")); 
 app.use("/api/notices", authMiddleware, societyMiddleware, require("./modules/notices"));
 app.use("/api/gate-pass", authMiddleware, societyMiddleware, require("./modules/gatepass"));
 app.use("/api/visitors", authMiddleware, societyMiddleware, require("./modules/visitors"));
@@ -53,12 +50,14 @@ app.use("/api/emergency-alerts", authMiddleware, societyMiddleware, require("./m
 app.use("/api/documents", authMiddleware, societyMiddleware, require("./modules/documents"));
 app.use("/api/timeline", authMiddleware, societyMiddleware, require("./modules/timeline"));
 app.use("/api/dashboard", authMiddleware, societyMiddleware, require("./modules/dashboard"));
-app.use("/api/invitations", require("./modules/invitations/invitationRoutes")); // Skip for now
+app.use("/api/invitations", require("./modules/invitations/invitationRoutes")); 
 
 // Feature flag enabled routes
 // app.use("/api/cctv", require("./hidden/cctv/cctvRoutes"));
 // app.use("/api/ai", require("./hidden/ai/aiDashboardRoutes"));
 // app.use("/api/chat", require("./hidden/chat/chatRoutes"));
+
+
 
 
 app.use("/api/notifications", authMiddleware, societyMiddleware, require("./routes/notificationRoutes"));

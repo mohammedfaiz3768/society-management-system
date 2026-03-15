@@ -3,7 +3,6 @@ const Razorpay = require("razorpay");
 let razorpayInstance = null;
 let isInitialized = false;
 
-// Only initialize Razorpay if credentials are provided
 if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
   try {
     razorpayInstance = new Razorpay({

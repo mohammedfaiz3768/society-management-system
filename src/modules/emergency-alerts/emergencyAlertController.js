@@ -4,7 +4,7 @@ const { sendEmergencyAlertPush } = require("../../hidden/notifications/notificat
 exports.createEmergencyAlert = async (req, res) => {
   try {
     const userId = req.user.id;
-    const societyId = req.societyId; // Assuming societyId is available on req
+    const societyId = req.societyId; 
     const {
       title,
       message,
@@ -60,7 +60,7 @@ exports.createEmergencyAlert = async (req, res) => {
 
 exports.listEmergencyAlerts = async (req, res) => {
   try {
-    const societyId = req.societyId; // Assuming societyId is available on req
+    const societyId = req.societyId; 
     const limit = parseInt(req.query.limit, 10) || 20;
     const offset = parseInt(req.query.offset, 10) || 0;
 
@@ -87,7 +87,7 @@ exports.acknowledgeEmergencyAlert = async (req, res) => {
   try {
     const alertId = req.params.id;
     const userId = req.user.id;
-    const societyId = req.societyId; // Assuming societyId is available on req
+    const societyId = req.societyId; 
 
     const alertResult = await db.query(
       `SELECT id FROM emergency_alerts WHERE id = $1 AND society_id = $2`,

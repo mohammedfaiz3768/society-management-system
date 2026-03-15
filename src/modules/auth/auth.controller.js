@@ -325,7 +325,6 @@ exports.updateEmail = async (req, res) => {
   }
 };
 
-// Email OTP Authentication
 exports.requestOtpByEmail = async (req, res) => {
   const email = (req.body.email || "").trim().toLowerCase();
   const invitationCode = (req.body.invitationCode || "").trim();
@@ -334,14 +333,12 @@ exports.requestOtpByEmail = async (req, res) => {
     return res.status(400).json({ message: "Email is required" });
   }
 
-  // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ message: "Invalid email format" });
   }
 
   try {
-    // AUTH MODE 2: Domain Restriction Check
     if (authConfig.isDomainRestricted()) {
       if (!authConfig.isEmailDomainAllowed(email)) {
         return res.status(403).json({
@@ -352,7 +349,6 @@ exports.requestOtpByEmail = async (req, res) => {
 
     const now = Date.now();
 
-    // Rate limiting: 5 requests per hour
     const oneHourAgo = new Date(now - 60 * 60 * 1000);
     const hourly = await pool.query(
       `SELECT COUNT(*) FROM otp_codes WHERE email = $1 AND created_at > $2`,
@@ -365,7 +361,6 @@ exports.requestOtpByEmail = async (req, res) => {
       });
     }
 
-    // Rate limiting: 3 requests per minute
     const oneMinuteAgo = new Date(now - 60 * 1000);
     const minute = await pool.query(
       `SELECT COUNT(*) FROM otp_codes WHERE email = $1 AND created_at > $2`,
@@ -378,13 +373,11 @@ exports.requestOtpByEmail = async (req, res) => {
       });
     }
 
-    // Check if user exists
     let userResult = await pool.query(
       `SELECT * FROM users WHERE email = $1`,
       [email]
     );
 
-    // AUTH MODE 1: Admin-Only Registration
     if (authConfig.isAdminOnly()) {
       if (userResult.rows.length === 0) {
         return res.status(403).json({
@@ -393,17 +386,14 @@ exports.requestOtpByEmail = async (req, res) => {
       }
     }
 
-    // AUTH MODE 3: Invitation-Only Registration
     if (authConfig.isInvitationOnly()) {
       if (userResult.rows.length === 0) {
-        // New user - must have invitation code
         if (!invitationCode) {
           return res.status(403).json({
             message: "Invitation code required for new registrations.",
           });
         }
 
-        // Validate invitation code
         const invitationResult = await pool.query(
           `SELECT * FROM invitations 
            WHERE code = $1 
@@ -419,14 +409,11 @@ exports.requestOtpByEmail = async (req, res) => {
           });
         }
 
-        // Store invitation for later use during verification
         req.validInvitation = invitationResult.rows[0];
       }
     }
 
-    // Create user if doesn't exist (only in open mode or with valid invitation)
     if (userResult.rows.length === 0) {
-      // Extract name from email (part before @) as default
       const defaultName = email.split('@')[0].replace(/[._-]/g, ' ');
 
       const newUser = await pool.query(
@@ -441,13 +428,11 @@ exports.requestOtpByEmail = async (req, res) => {
     const user = userResult.rows[0];
     const otp = generateOtp();
 
-    // Delete old OTPs for this email
     await pool.query(
       `DELETE FROM otp_codes WHERE email = $1`,
       [email]
     );
 
-    // Insert new OTP
     await pool.query(
       `INSERT INTO otp_codes (email, code, expires_at, created_at)
        VALUES ($1, $2, NOW() + INTERVAL '5 minutes', NOW())`,
@@ -456,17 +441,14 @@ exports.requestOtpByEmail = async (req, res) => {
 
 
 
-    // Log OTP for production debugging (since email is failing)
     console.log('----------------------------------------');
     console.log('🔐 EMAIL OTP:', otp);
     console.log('----------------------------------------');
 
-    // Try to send OTP via email (non-blocking to prevent timeouts)
     sendEmail(email, "Your Login OTP", otp).catch(emailError => {
       console.log('Email send failed (background):', emailError.message);
     });
 
-    // Log activity (optional - don't fail if this errors)
     try {
       await logActivity({
         userId: user.id,
@@ -514,13 +496,11 @@ exports.verifyOtpByEmail = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Delete used OTP
     await pool.query(
       `DELETE FROM otp_codes WHERE id = $1`,
       [otpRow.rows[0].id]
     );
 
-    // Get user
     let userResult = await pool.query(
       `SELECT * FROM users WHERE email = $1`,
       [email]
@@ -530,7 +510,6 @@ exports.verifyOtpByEmail = async (req, res) => {
     let isNewUser = userResult.rows.length === 0;
 
     if (isNewUser) {
-      // For invitation-only mode, validate invitation code again
       if (authConfig.isInvitationOnly()) {
         if (!invitationCode) {
           return res.status(403).json({
@@ -555,21 +534,18 @@ exports.verifyOtpByEmail = async (req, res) => {
 
         const invitation = invitationResult.rows[0];
 
-        // Create user with role from invitation
         const newUser = await pool.query(
           `INSERT INTO users (email, role) VALUES ($1, $2) RETURNING *`,
           [email, invitation.role || 'resident']
         );
         user = newUser.rows[0];
 
-        // Mark invitation as used
         await pool.query(
           `UPDATE invitations SET used = TRUE, used_by = $1, used_at = NOW() WHERE id = $2`,
           [user.id, invitation.id]
         );
 
       } else {
-        // Open mode or other modes - create user as resident
         const newUser = await pool.query(
           `INSERT INTO users (email, role) VALUES ($1, 'resident') RETURNING *`,
           [email]
@@ -635,7 +611,6 @@ exports.login = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Check password if exists
     if (!user.password_hash) {
       return res.status(400).json({ message: "Please use OTP login for this account" });
     }
@@ -665,7 +640,6 @@ exports.login = async (req, res) => {
   }
 };
 
-// Request OTP for password change
 exports.requestPasswordChangeOtp = async (req, res) => {
   const userId = req.user.id;
   const { currentPassword } = req.body;
@@ -683,12 +657,10 @@ exports.requestPasswordChangeOtp = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Check if user has a password set
     if (!user.password_hash) {
       return res.status(400).json({ message: "No password set. Please contact administrator." });
     }
 
-    // Verify current password
     const bcrypt = require("bcryptjs");
     const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
 
@@ -696,18 +668,15 @@ exports.requestPasswordChangeOtp = async (req, res) => {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
 
-    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); 
 
-    // Store OTP
     await pool.query(
       `INSERT INTO otps (identifier, otp_code, expires_at) VALUES ($1, $2, $3)
        ON CONFLICT (identifier) DO UPDATE SET otp_code = $2, expires_at = $3`,
       [user.email, otp, expiresAt]
     );
 
-    // Log OTP to console (for development/testing)
     console.log('\n═══════════════════════════════════════════');
     console.log('📧 PASSWORD CHANGE OTP');
     console.log('═══════════════════════════════════════════');
@@ -732,7 +701,6 @@ exports.requestPasswordChangeOtp = async (req, res) => {
   }
 };
 
-// Verify OTP and update password
 exports.verifyOtpAndChangePassword = async (req, res) => {
   const userId = req.user.id;
   const { otp, newPassword } = req.body;
@@ -754,7 +722,6 @@ exports.verifyOtpAndChangePassword = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Verify OTP
     const otpResult = await pool.query(
       `SELECT * FROM otps WHERE identifier = $1 AND otp_code = $2 AND expires_at > NOW()`,
       [user.email, otp]
@@ -764,18 +731,15 @@ exports.verifyOtpAndChangePassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Hash new password
     const bcrypt = require("bcryptjs");
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(newPassword, salt);
 
-    // Update password
     await pool.query(
       `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
       [passwordHash, userId]
     );
 
-    // Delete used OTP
     await pool.query(`DELETE FROM otps WHERE identifier = $1`, [user.email]);
 
     await logActivity({
@@ -794,10 +758,6 @@ exports.verifyOtpAndChangePassword = async (req, res) => {
   }
 };
 
-/**
- * Admin OTP Login - Request OTP
- * Multi-tenant: Email-based OTP authentication for admins
- */
 exports.adminRequestOtp = async (req, res) => {
   const { email } = req.body;
 
@@ -806,7 +766,6 @@ exports.adminRequestOtp = async (req, res) => {
   }
 
   try {
-    // Check if user exists with admin role
     const userResult = await pool.query(
       "SELECT * FROM users WHERE email = $1 AND role = $2",
       [email, "admin"]
@@ -818,18 +777,15 @@ exports.adminRequestOtp = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); 
 
-    // Store OTP
     await pool.query(
       `INSERT INTO otps (identifier, otp_code, expires_at) VALUES ($1, $2, $3)
        ON CONFLICT (identifier) DO UPDATE SET otp_code = $2, expires_at = $3`,
       [email, otp, expiresAt]
     );
 
-    // Log OTP to console (for development/testing)
     console.log('\n═══════════════════════════════════════════');
     console.log('🔐 ADMIN LOGIN OTP');
     console.log('═══════════════════════════════════════════');
@@ -854,10 +810,6 @@ exports.adminRequestOtp = async (req, res) => {
   }
 };
 
-/**
- * Admin OTP Login - Verify OTP and login
- * Returns user info and is_first_login status
- */
 exports.adminVerifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -866,7 +818,6 @@ exports.adminVerifyOtp = async (req, res) => {
   }
 
   try {
-    // Verify OTP
     const otpResult = await pool.query(
       `SELECT * FROM otps WHERE identifier = $1 AND otp_code = $2 AND expires_at > NOW()`,
       [email, otp]
@@ -876,7 +827,6 @@ exports.adminVerifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // Get user
     const userResult = await pool.query(
       "SELECT * FROM users WHERE email = $1 AND role = $2",
       [email, "admin"]
@@ -888,10 +838,8 @@ exports.adminVerifyOtp = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Delete used OTP
     await pool.query(`DELETE FROM otps WHERE identifier = $1`, [email]);
 
-    // Create JWT token
     const token = createToken(user);
 
     await logActivity({

@@ -1,16 +1,13 @@
-// src/webrtc/signaling.js
 const db = require("../config/db");
 
 function initWebrtcSignaling(io) {
   const nsp = io.of("/webrtc");
 
-  // cameraId -> publisher socket.id
   const publishers = new Map();
 
   nsp.on("connection", (socket) => {
     console.log("WebRTC client connected:", socket.id);
 
-    // Common join for both publisher + viewer
     socket.on("join", async ({ token, cameraId, role }) => {
       try {
         if (!token || !cameraId) {
@@ -19,7 +16,6 @@ function initWebrtcSignaling(io) {
           return;
         }
 
-        // 🔐 validate token
         const { rows } = await db.query(
           `SELECT * FROM cctv_view_tokens
            WHERE token = $1 AND camera_id = $2 AND expires_at > NOW()`,
@@ -46,7 +42,6 @@ function initWebrtcSignaling(io) {
           console.log(`Viewer joined camera ${cameraId}:`, socket.id);
           const pubId = publishers.get(cameraId);
           if (pubId) {
-            // tell publisher a new viewer wants stream
             nsp.to(pubId).emit("viewer-joined", {
               viewerId: socket.id,
               cameraId,
@@ -59,7 +54,6 @@ function initWebrtcSignaling(io) {
       }
     });
 
-    // Viewer → Publisher: offer
     socket.on("viewer-offer", ({ cameraId, sdp }) => {
       const pubId = publishers.get(cameraId);
       if (!pubId) return;
@@ -70,7 +64,6 @@ function initWebrtcSignaling(io) {
       });
     });
 
-    // Publisher → Viewer: answer
     socket.on("publisher-answer", ({ viewerId, cameraId, sdp }) => {
       nsp.to(viewerId).emit("publisher-answer", {
         cameraId,
@@ -78,7 +71,6 @@ function initWebrtcSignaling(io) {
       });
     });
 
-    // ICE candidates from viewer
     socket.on("viewer-ice-candidate", ({ cameraId, candidate }) => {
       const pubId = publishers.get(cameraId);
       if (!pubId) return;
@@ -89,7 +81,6 @@ function initWebrtcSignaling(io) {
       });
     });
 
-    // ICE candidates from publisher
     socket.on("publisher-ice-candidate", ({ viewerId, cameraId, candidate }) => {
       nsp.to(viewerId).emit("publisher-ice-candidate", {
         cameraId,
@@ -102,7 +93,6 @@ function initWebrtcSignaling(io) {
       const role = socket.data?.role;
 
       if (cameraId && role === "publisher") {
-        // Drop publisher for that camera
         if (publishers.get(cameraId) === socket.id) {
           publishers.delete(cameraId);
           nsp.to(`cam_${cameraId}`).emit("publisher-disconnected", {

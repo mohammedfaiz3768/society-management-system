@@ -1,7 +1,6 @@
 const pool = require("../../config/db");
 const { logActivity } = require("../../utils/activityLogger");
 
-// Generate random invitation code
 function generateInvitationCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
@@ -11,13 +10,11 @@ function generateInvitationCode() {
     return code;
 }
 
-// Create invitation
 exports.createInvitation = async (req, res) => {
     const { email, role } = req.body;
     const invitedBy = req.user.id;
     const societyId = req.societyId;
 
-    // Only admins can create invitations
     if (req.user.role !== 'admin') {
         return res.status(403).json({ message: "Only admins can create invitations" });
     }
@@ -27,8 +24,8 @@ exports.createInvitation = async (req, res) => {
     }
 
     try {
-        const code = generateInvitationCode(); // Generate code here
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        const code = generateInvitationCode(); 
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); 
 
         const result = await pool.query(
             `INSERT INTO invitations (email, role, code, created_by, expires_at, society_id)
@@ -57,11 +54,9 @@ exports.createInvitation = async (req, res) => {
     }
 };
 
-// Get all invitations
 exports.getInvitations = async (req, res) => {
     const societyId = req.societyId;
 
-    // Only admins can view invitations
     if (req.user.role !== 'admin') {
         return res.status(403).json({ message: "Only admins can view invitations" });
     }
@@ -90,11 +85,9 @@ exports.getInvitations = async (req, res) => {
     }
 };
 
-// Revoke invitation
 exports.revokeInvitation = async (req, res) => {
     const { id } = req.params;
 
-    // Only admins can revoke invitations
     if (req.user.role !== 'admin') {
         return res.status(403).json({ message: "Only admins can revoke invitations" });
     }
@@ -130,7 +123,6 @@ exports.revokeInvitation = async (req, res) => {
     }
 };
 
-// Validate invitation (public endpoint for checking before registration)
 exports.validateInvitation = async (req, res) => {
     const { code, email } = req.body;
 

@@ -43,7 +43,7 @@ const SkeletonLoader = ({
                     width,
                     height,
                     borderRadius,
-                    backgroundColor: '#E2E8F0', // slate-200
+                    backgroundColor: '#E2E8F0', 
                 },
                 animatedStyle,
                 style,

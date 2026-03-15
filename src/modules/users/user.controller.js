@@ -2,7 +2,7 @@ const pool = require("../../config/db");
 const { logActivity } = require("../../utils/activityLogger");
 
 exports.getAllUsers = async (req, res) => {
-    const societyId = req.societyId; // Filter by society
+    const societyId = req.societyId; 
 
     try {
         const result = await pool.query(
@@ -21,14 +21,13 @@ exports.getAllUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
     const { name, email, phone, role, flat_number, block } = req.body;
-    const societyId = req.societyId; // Add to new user
+    const societyId = req.societyId; 
 
     if (!email && !phone) {
         return res.status(400).json({ message: "Email or Phone is required" });
     }
 
     try {
-        // Check if user exists in same society
         const existing = await pool.query(
             `SELECT * FROM users WHERE (email = $1 OR phone = $2) AND society_id = $3`,
             [email, phone, societyId]

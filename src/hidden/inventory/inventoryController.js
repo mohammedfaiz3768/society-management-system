@@ -1,7 +1,6 @@
 const pool = require("../../config/db");
-const { logActivity } = require("../utils/activityLogger"); // ➕ added
+const { logActivity } = require("../utils/activityLogger"); 
 
-// ADMIN: Add new asset
 exports.addAsset = async (req, res) => {
   const {
     name,
@@ -37,7 +36,6 @@ exports.addAsset = async (req, res) => {
 
     const asset = result.rows[0];
 
-    // 🟦 Log Activity
     await logActivity({
       userId: req.user.id,
       type: "asset_added",
@@ -54,7 +52,6 @@ exports.addAsset = async (req, res) => {
   }
 };
 
-// ADMIN: Update asset
 exports.updateAsset = async (req, res) => {
   const { id } = req.params;
   const {
@@ -103,7 +100,6 @@ exports.updateAsset = async (req, res) => {
 
     const asset = updated.rows[0];
 
-    // 🟧 Log Activity
     await logActivity({
       userId: req.user.id,
       type: "asset_updated",
@@ -120,14 +116,12 @@ exports.updateAsset = async (req, res) => {
   }
 };
 
-// ADMIN: Delete asset
 exports.deleteAsset = async (req, res) => {
   const { id } = req.params;
 
   try {
     await pool.query(`DELETE FROM assets WHERE id = $1`, [id]);
 
-    // 🟥 Log Activity
     await logActivity({
       userId: req.user.id,
       type: "asset_deleted",
@@ -144,7 +138,6 @@ exports.deleteAsset = async (req, res) => {
   }
 };
 
-// USERS (staff + admin): Get all assets
 exports.getAllAssets = async (req, res) => {
   try {
     const result = await pool.query(
@@ -161,7 +154,6 @@ exports.getAllAssets = async (req, res) => {
   }
 };
 
-// STAFF: Get only assigned assets
 exports.getMyAssignedAssets = async (req, res) => {
   const staffId = req.user.id;
 
@@ -179,7 +171,6 @@ exports.getMyAssignedAssets = async (req, res) => {
   }
 };
 
-// STAFF + ADMIN: Log maintenance action
 exports.addMaintenanceLog = async (req, res) => {
   const staffId = req.user.id;
   const { asset_id, action, notes } = req.body;
@@ -197,7 +188,6 @@ exports.addMaintenanceLog = async (req, res) => {
 
     const logEntry = result.rows[0];
 
-    // Auto-set asset to working if repaired
     if (action.toLowerCase().includes("repair")) {
       await pool.query(
         `UPDATE assets SET status = 'working', updated_at = NOW() WHERE id = $1`,
@@ -205,7 +195,6 @@ exports.addMaintenanceLog = async (req, res) => {
       );
     }
 
-    // 🟦 Log Activity
     await logActivity({
       userId: staffId,
       type: "asset_maintenance",
@@ -222,7 +211,6 @@ exports.addMaintenanceLog = async (req, res) => {
   }
 };
 
-// ADMIN: View logs of an asset
 exports.getMaintenanceLogs = async (req, res) => {
   const { asset_id } = req.params;
 

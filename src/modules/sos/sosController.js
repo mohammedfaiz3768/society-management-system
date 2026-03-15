@@ -8,7 +8,6 @@ exports.createSOS = async (req, res) => {
     const societyId = req.societyId;
     const { lat, lng, message, type, trigger_buzzer, auto_call } = req.body;
 
-    // Determine emergency service if type provided
     const emergencyType = type || "general";
     const emergencyService = emergencyType !== "general"
       ? getServiceForType(emergencyType)?.name
@@ -38,11 +37,9 @@ exports.createSOS = async (req, res) => {
 
     const sos = insert.rows[0];
 
-    // If buzzer enabled, send high-priority push to ALL residents
     if (trigger_buzzer) {
       await sendBuzzerAlert(sos, societyId);
     } else {
-      // Normal SOS notification
       sendSosPush(sos).catch(console.error);
     }
 
@@ -125,10 +122,8 @@ exports.listSOS = async (req, res) => {
   }
 };
 
-// Send buzzer alert to ALL residents in society
 async function sendBuzzerAlert(sos, societyId) {
   try {
-    // Get all residents in the society
     const residents = await db.query(
       `SELECT id, fcm_token, expo_push_token FROM users 
        WHERE society_id = $1 AND role = 'resident' 
@@ -136,7 +131,6 @@ async function sendBuzzerAlert(sos, societyId) {
       [societyId]
     );
 
-    // Send high-priority push notification with buzzer flag
     const pushPromises = residents.rows.map(async (resident) => {
       const notification = {
         to: resident.expo_push_token || resident.fcm_token,
@@ -165,11 +159,8 @@ async function sendBuzzerAlert(sos, societyId) {
         },
       };
 
-      // Send via FCM or Expo depending on platform
       if (resident.fcm_token) {
-        // Notification logic handled by notification service
       } else if (resident.expo_push_token) {
-        // Send via Expo
         const { sendPushNotification } = require("../../utils/pushNotifications");
         await sendPushNotification(notification);
       }
@@ -181,7 +172,6 @@ async function sendBuzzerAlert(sos, societyId) {
   }
 }
 
-// Get emergency service contacts
 exports.getEmergencyContacts = async (req, res) => {
   try {
     res.json({

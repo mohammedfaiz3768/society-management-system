@@ -5,7 +5,7 @@ export interface Resident {
     name: string;
     block: string;
     flat_number: string;
-    phone: string; // Maybe masked
+    phone: string; 
 }
 
 export const getDirectory = async (): Promise<Resident[]> => {

@@ -8,7 +8,6 @@ const {
   cancelSubscription,
 } = require("../../services/razorpayService");
 
-// 1️⃣ Create a new Razorpay Plan
 router.post("/create-plan", auth, async (req, res) => {
   try {
     const { amount, period } = req.body;
@@ -28,7 +27,6 @@ router.post("/create-plan", auth, async (req, res) => {
   }
 });
 
-// 2️⃣ Create subscription for a user
 router.post("/create-subscription", auth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -58,7 +56,6 @@ router.post("/create-subscription", auth, async (req, res) => {
   }
 });
 
-// 3️⃣ Cancel subscription
 router.post("/cancel", auth, async (req, res) => {
   try {
     const { subscriptionId } = req.body;

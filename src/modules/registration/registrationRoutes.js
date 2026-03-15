@@ -7,7 +7,6 @@ const {
     resendVerification,
 } = require("./registrationController");
 
-// Public routes (no auth required)
 router.post("/register", registerSociety);
 router.get("/verify/:token", verifyEmail);
 router.get("/check-availability", checkAvailability);

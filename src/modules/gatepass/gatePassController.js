@@ -12,7 +12,6 @@ exports.createGatePass = async (req, res) => {
   }
 
   try {
-    // Rate limiting: Check if a gate pass with same details was created in the last 2 minutes
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
     const queryConditions = ['user_id = $1', 'society_id = $2', 'created_at > $3', 'visitor_name = $4'];
     const queryParams = [userId, societyId, twoMinutesAgo, visitor_name];
@@ -116,7 +115,6 @@ exports.verifyGatePass = async (req, res) => {
     if (now > new Date(pass.valid_to)) return res.json({ isValid: false, gatePass: pass, reason: "Expired" });
     if (pass.status === 'EXPIRED') return res.json({ isValid: false, gatePass: pass, reason: "Marked as Expired" });
 
-    // Valid
     res.json({ isValid: true, gatePass: pass });
   } catch (err) {
     console.error("verifyGatePass error:", err);
@@ -138,8 +136,6 @@ exports.markEntry = async (req, res) => {
     );
 
     if (result.rows.length === 0) return res.status(404).json({ message: "Not found" });
-
-    // Notify resident
 
     res.json(result.rows[0]);
   } catch (err) {

@@ -11,7 +11,7 @@ export interface GatePass {
 
 export const createGatePass = async (data: { visitorName: string; type: string; validUntil: string }) => {
     const response = await apiClient.post('/gate-pass/create', data);
-    return response.data; // Expecting { pass_code, ... }
+    return response.data; 
 };
 
 export const getMyPasses = async (): Promise<GatePass[]> => {

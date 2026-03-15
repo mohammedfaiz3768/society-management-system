@@ -3,10 +3,9 @@ const axios = require("axios");
 async function sendSMS(phone, message) {
 
   try {
-    const apiKey = process.env.SMS_API_KEY;   // your SMS provider API key
+    const apiKey = process.env.SMS_API_KEY;   
     const sender = process.env.SMS_SENDER || "SOCIETY";
 
-    // Example: Fast2SMS (can be swapped to any provider)
     const response = await axios.post(
       "https://www.fast2sms.com/dev/bulkV2",
       {

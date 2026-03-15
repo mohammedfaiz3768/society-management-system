@@ -22,7 +22,6 @@ router.get("/events/:cameraId", auth, async (req, res) => {
 
 router.post("/event", receiveAiEvent);
 
-// Validate key before streaming
 router.post("/validate", auth, async (req, res) => {
   try {
     const { key, camera_id } = req.body;
@@ -40,7 +39,6 @@ router.post("/validate", auth, async (req, res) => {
       return res.status(403).json({ error: "Invalid or expired key" });
     }
 
-    // Log access
     await db.query(
       `INSERT INTO camera_access_logs (user_id, camera_id, key_used)
        VALUES ($1,$2,$3)`,

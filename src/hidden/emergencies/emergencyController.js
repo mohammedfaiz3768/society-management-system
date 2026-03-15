@@ -1,7 +1,6 @@
 const pool = require("../../config/db");
 const { sendNotification } = require("../../utils/sendNotification");
 
-// RESIDENT/ADMIN: Create emergency alert
 exports.createEmergency = async (req, res) => {
   const userId = req.user.id;
   const societyId = req.societyId;
@@ -12,7 +11,6 @@ exports.createEmergency = async (req, res) => {
   }
 
   try {
-    // Get user flat number (if any)
     const userResult = await pool.query(
       `SELECT flat_number FROM users WHERE id = $1`,
       [userId]
@@ -30,7 +28,6 @@ exports.createEmergency = async (req, res) => {
 
     const emergency = result.rows[0];
 
-    // Notify all admins & guards
     const notifyUsers = await pool.query(
       `SELECT id, role FROM users WHERE role IN ('admin', 'guard')`
     );
@@ -52,7 +49,6 @@ exports.createEmergency = async (req, res) => {
   }
 };
 
-// RESIDENT: Get my emergencies
 exports.getMyEmergencies = async (req, res) => {
   const userId = req.user.id;
 
@@ -71,7 +67,6 @@ exports.getMyEmergencies = async (req, res) => {
   }
 };
 
-// ADMIN/GUARD: Get all emergencies (latest first)
 exports.getAllEmergencies = async (req, res) => {
   const societyId = req.societyId;
 
@@ -99,7 +94,6 @@ exports.getAllEmergencies = async (req, res) => {
   }
 };
 
-// ADMIN/GUARD: Update emergency status (open / in_progress / resolved)
 exports.updateEmergencyStatus = async (req, res) => {
   const { id } = req.params;
   const { status, priority, admin_note } = req.body;
@@ -149,7 +143,6 @@ exports.updateEmergencyStatus = async (req, res) => {
 
     const emergency = updated.rows[0];
 
-    // Notify the original resident who raised it
     if (emergency.user_id) {
       let msg;
       if (status === "resolved") {

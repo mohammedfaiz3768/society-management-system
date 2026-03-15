@@ -79,7 +79,6 @@ exports.getActivePolls = async (req, res) => {
 
     const polls = result.rows;
 
-    // Fetch options for each poll
     const pollsWithOptions = await Promise.all(
       polls.map(async (poll) => {
         const optionsRes = await pool.query(
@@ -126,8 +125,8 @@ exports.getPollDetails = async (req, res) => {
 
 exports.submitVote = async (req, res) => {
   const userId = req.user.id;
-  const poll_id = req.params.id; // Get from URL param
-  const { option_id } = req.body; // option_id from body
+  const poll_id = req.params.id; 
+  const { option_id } = req.body; 
 
   if (!poll_id || !option_id)
     return res.status(400).json({ message: "Poll ID and Option ID required" });

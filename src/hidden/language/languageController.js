@@ -1,6 +1,5 @@
 const db = require("../../config/db");
 
-// GET /api/languages
 exports.getLanguages = async (req, res) => {
   try {
     const { rows } = await db.query(
@@ -13,7 +12,6 @@ exports.getLanguages = async (req, res) => {
   }
 };
 
-// POST /api/languages/change
 exports.changeLanguage = async (req, res) => {
   try {
     const userId = req.user.id;
