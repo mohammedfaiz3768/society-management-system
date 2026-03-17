@@ -11,9 +11,23 @@ exports.createGatePass = async (req, res) => {
     return res.status(400).json({ message: "visitor_name is required" });
   }
 
+  // ✅ Validate valid_to — required, must be future, max 30 days
+  if (!valid_to) {
+    return res.status(400).json({ message: "valid_to is required" });
+  }
+  const validToDate = new Date(valid_to);
+  if (isNaN(validToDate.getTime()) || validToDate <= new Date()) {
+    return res.status(400).json({ message: "valid_to must be a future date" });
+  }
+  const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  if (validToDate > maxDate) {
+    return res.status(400).json({ message: "Gate pass cannot be valid for more than 30 days" });
+  }
+
   try {
+    // Duplicate pass cooldown check
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    const queryConditions = ['user_id = $1', 'society_id = $2', 'created_at > $3', 'visitor_name = $4'];
+    const queryConditions = ["user_id = $1", "society_id = $2", "created_at > $3", "visitor_name = $4"];
     const queryParams = [userId, societyId, twoMinutesAgo, visitor_name];
 
     if (visitor_phone) {
@@ -22,33 +36,32 @@ exports.createGatePass = async (req, res) => {
     }
 
     const recentPassCheck = await pool.query(
-      `SELECT id, created_at FROM gate_passes 
-       WHERE ${queryConditions.join(' AND ')}
-       ORDER BY created_at DESC LIMIT 1`,
+      `SELECT id, created_at FROM gate_passes
+             WHERE ${queryConditions.join(" AND ")}
+             ORDER BY created_at DESC LIMIT 1`,
       queryParams
     );
 
     if (recentPassCheck.rows.length > 0) {
-      const recentPass = recentPassCheck.rows[0];
-      const createdAt = new Date(recentPass.created_at);
-      const waitUntil = new Date(createdAt.getTime() + 2 * 60 * 1000);
+      const waitUntil = new Date(new Date(recentPassCheck.rows[0].created_at).getTime() + 2 * 60 * 1000);
       const remainingSeconds = Math.ceil((waitUntil - Date.now()) / 1000);
-
       return res.status(429).json({
-        message: `A gate pass with the same details was created recently. Please wait ${remainingSeconds} seconds before creating another.`,
+        message: `Please wait ${remainingSeconds} seconds before creating another pass.`,
         remainingSeconds,
-        waitUntil: waitUntil.toISOString()
+        waitUntil: waitUntil.toISOString(),
       });
     }
 
-    const qr_code = Math.floor(100000 + Math.random() * 900000).toString();
+    // ✅ Cryptographically random QR code — not brute-forceable
+    const qr_code = crypto.randomBytes(32).toString("hex");
     const numPeople = number_of_people && number_of_people > 0 ? number_of_people : 1;
 
     const result = await pool.query(
-      `INSERT INTO gate_passes (user_id, visitor_name, visitor_phone, vehicle_number, purpose, qr_code, valid_until, society_id, number_of_people)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
-      [userId, visitor_name, visitor_phone || "", vehicle_number || "", purpose || "", qr_code, valid_to, societyId, numPeople]
+      `INSERT INTO gate_passes
+             (user_id, visitor_name, visitor_phone, vehicle_number, purpose, qr_code, valid_until, society_id, number_of_people)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             RETURNING *`,
+      [userId, visitor_name, visitor_phone || "", vehicle_number || "", purpose || "", qr_code, validToDate, societyId, numPeople]
     );
 
     const gatePass = result.rows[0];
@@ -59,10 +72,11 @@ exports.createGatePass = async (req, res) => {
       entityType: "gatepass",
       entityId: gatePass.id,
       title: "Gate Pass Created",
-      description: `Pass for ${visitor_name}${numPeople > 1 ? ` (${numPeople} people)` : ''}`
+      description: `Pass for ${visitor_name}${numPeople > 1 ? ` (${numPeople} people)` : ""}`,
     });
 
-    res.status(201).json(gatePass);
+    return res.status(201).json(gatePass);
+
   } catch (err) {
     console.error("createGatePass error:", err);
     res.status(500).json({ message: "Server error" });
@@ -73,12 +87,20 @@ exports.getGatePasses = async (req, res) => {
   const userId = req.user.id;
   const societyId = req.societyId;
 
+  // ✅ Pagination
+  const page = parseInt(req.query.page) || 1;
+  const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+  const offset = (page - 1) * limit;
+
   try {
     const result = await pool.query(
-      `SELECT * FROM gate_passes WHERE user_id = $1 AND society_id = $2 ORDER BY created_at DESC`,
-      [userId, societyId]
+      `SELECT * FROM gate_passes
+             WHERE user_id = $1 AND society_id = $2
+             ORDER BY created_at DESC
+             LIMIT $3 OFFSET $4`,
+      [userId, societyId, limit, offset]
     );
-    res.json(result.rows);
+    return res.json(result.rows);
   } catch (err) {
     console.error("getGatePasses error:", err);
     res.status(500).json({ message: "Server error" });
@@ -87,10 +109,24 @@ exports.getGatePasses = async (req, res) => {
 
 exports.getGatePassById = async (req, res) => {
   const { id } = req.params;
+  const societyId = req.societyId;
+  const userId = req.user.id;
+  const role = req.user.role;
+
   try {
-    const result = await pool.query(`SELECT * FROM gate_passes WHERE id = $1`, [id]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Not found" });
-    res.json(result.rows[0]);
+    // ✅ Scoped to society, ownership verified (guards and admins can see all)
+    const result = await pool.query(
+      `SELECT * FROM gate_passes
+             WHERE id = $1 AND society_id = $2
+               AND ($3 = 'admin' OR $3 = 'guard' OR user_id = $4)`,
+      [id, societyId, role, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    return res.json(result.rows[0]);
   } catch (err) {
     console.error("getGatePassById error:", err);
     res.status(500).json({ message: "Server error" });
@@ -99,10 +135,16 @@ exports.getGatePassById = async (req, res) => {
 
 exports.verifyGatePass = async (req, res) => {
   const { qrData } = req.body;
+  const societyId = req.societyId;
+
   if (!qrData) return res.status(400).json({ message: "QR Data required" });
 
   try {
-    const result = await pool.query(`SELECT * FROM gate_passes WHERE qr_code = $1`, [qrData]);
+    // ✅ Scoped to society — guard can't scan other societies' passes
+    const result = await pool.query(
+      `SELECT * FROM gate_passes WHERE qr_code = $1 AND society_id = $2`,
+      [qrData, societyId]
+    );
 
     if (result.rows.length === 0) {
       return res.json({ isValid: false, reason: "Invalid QR Code" });
@@ -111,11 +153,19 @@ exports.verifyGatePass = async (req, res) => {
     const pass = result.rows[0];
     const now = new Date();
 
-    if (now < new Date(pass.valid_from)) return res.json({ isValid: false, gatePass: pass, reason: "Not yet valid" });
-    if (now > new Date(pass.valid_to)) return res.json({ isValid: false, gatePass: pass, reason: "Expired" });
-    if (pass.status === 'EXPIRED') return res.json({ isValid: false, gatePass: pass, reason: "Marked as Expired" });
+    if (pass.valid_from && now < new Date(pass.valid_from)) {
+      return res.json({ isValid: false, reason: "Not yet valid" }); // ✅ no pass data on failure
+    }
+    if (now > new Date(pass.valid_until)) {
+      return res.json({ isValid: false, reason: "Expired" });
+    }
+    if (pass.status === "EXPIRED") {
+      return res.json({ isValid: false, reason: "Marked as expired" });
+    }
 
-    res.json({ isValid: true, gatePass: pass });
+    // ✅ Only return full pass data when valid
+    return res.json({ isValid: true, gatePass: pass });
+
   } catch (err) {
     console.error("verifyGatePass error:", err);
     res.status(500).json({ message: "Server error" });
@@ -125,19 +175,38 @@ exports.verifyGatePass = async (req, res) => {
 exports.markEntry = async (req, res) => {
   const { id } = req.params;
   const guardId = req.user.id;
+  const societyId = req.societyId;
 
   try {
+    // ✅ Society scoped, only PENDING passes, only if not expired
     const result = await pool.query(
-      `UPDATE gate_passes 
-       SET status = 'ENTERED', entry_time = NOW(), guard_id = $1, updated_at = NOW()
-       WHERE id = $2
-       RETURNING *`,
-      [guardId, id]
+      `UPDATE gate_passes
+             SET status = 'ENTERED', entry_time = NOW(), guard_id = $1, updated_at = NOW()
+             WHERE id = $2
+               AND society_id = $3
+               AND status = 'PENDING'
+               AND (valid_until IS NULL OR valid_until > NOW())
+             RETURNING *`,
+      [guardId, id, societyId]
     );
 
-    if (result.rows.length === 0) return res.status(404).json({ message: "Not found" });
+    if (result.rows.length === 0) {
+      // Check why it failed
+      const check = await pool.query(
+        `SELECT status, valid_until FROM gate_passes WHERE id = $1 AND society_id = $2`,
+        [id, societyId]
+      );
+      if (check.rows.length === 0) {
+        return res.status(404).json({ message: "Gate pass not found" });
+      }
+      if (check.rows[0].status !== "PENDING") {
+        return res.status(400).json({ message: `Cannot mark entry — pass status is ${check.rows[0].status}` });
+      }
+      return res.status(400).json({ message: "Gate pass has expired" });
+    }
 
-    res.json(result.rows[0]);
+    return res.json(result.rows[0]);
+
   } catch (err) {
     console.error("markEntry error:", err);
     res.status(500).json({ message: "Server error" });
@@ -147,19 +216,33 @@ exports.markEntry = async (req, res) => {
 exports.markExit = async (req, res) => {
   const { id } = req.params;
   const guardId = req.user.id;
+  const societyId = req.societyId;
 
   try {
+    // ✅ Society scoped, only ENTERED passes can exit
     const result = await pool.query(
-      `UPDATE gate_passes 
-         SET status = 'EXITED', exit_time = NOW(), guard_id = $1, updated_at = NOW()
-         WHERE id = $2
-         RETURNING *`,
-      [guardId, id]
+      `UPDATE gate_passes
+             SET status = 'EXITED', exit_time = NOW(), guard_id = $1, updated_at = NOW()
+             WHERE id = $2
+               AND society_id = $3
+               AND status = 'ENTERED'
+             RETURNING *`,
+      [guardId, id, societyId]
     );
 
-    if (result.rows.length === 0) return res.status(404).json({ message: "Not found" });
+    if (result.rows.length === 0) {
+      const check = await pool.query(
+        `SELECT status FROM gate_passes WHERE id = $1 AND society_id = $2`,
+        [id, societyId]
+      );
+      if (check.rows.length === 0) {
+        return res.status(404).json({ message: "Gate pass not found" });
+      }
+      return res.status(400).json({ message: `Cannot mark exit — pass status is ${check.rows[0].status}` });
+    }
 
-    res.json(result.rows[0]);
+    return res.json(result.rows[0]);
+
   } catch (err) {
     console.error("markExit error:", err);
     res.status(500).json({ message: "Server error" });
@@ -169,13 +252,25 @@ exports.markExit = async (req, res) => {
 exports.deleteGatePass = async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
+  const societyId = req.societyId;
 
   try {
-    const result = await pool.query("DELETE FROM gate_passes WHERE id = $1 AND user_id = $2 RETURNING *", [id, userId]);
-    if (result.rows.length === 0) return res.status(404).json({ message: "Not found or unauthorized" });
-    res.json({ message: "Deleted" });
+    // ✅ Society scoped + ownership check
+    const result = await pool.query(
+      `DELETE FROM gate_passes
+             WHERE id = $1 AND user_id = $2 AND society_id = $3
+             RETURNING *`,
+      [id, userId, societyId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Not found or unauthorized" });
+    }
+
+    return res.json({ message: "Deleted" });
+
   } catch (err) {
     console.error("deleteGatePass error:", err);
     res.status(500).json({ message: "Server error" });
   }
-}
+};

@@ -1,45 +1,37 @@
 const jwt = require("jsonwebtoken");
-const dotenv = require("dotenv");
-dotenv.config();
 
 module.exports = function (req, res, next) {
-  let token = null;
-
   const authHeader = req.headers.authorization;
-  console.log('Auth middleware - Authorization header:', authHeader);
 
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-    console.log('Auth middleware - Token extracted from Bearer:', token ? 'YES' : 'NO');
+  // ✅ Only standard Bearer token — no fallback non-standard headers
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Authorization denied. Token missing." });
   }
 
-  if (!token && req.headers.token) {
-    token = req.headers.token;
-    console.log('Auth middleware - Token from headers.token');
-  }
-
-  console.log('Auth middleware - Final token status:', token ? 'FOUND' : 'NOT FOUND');
+  const token = authHeader.split(" ")[1];
 
   if (!token) {
-    console.log('Auth middleware - No token found, returning 401');
-    return res.status(401).json({
-      message: "Authorization denied. Token missing.",
-    });
+    return res.status(401).json({ message: "Authorization denied. Token missing." });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // ✅ society_id included — societyMiddleware can now read from token, no DB query needed
     req.user = {
       id: decoded.id,
       role: decoded.role,
       phone: decoded.phone,
+      society_id: decoded.society_id ?? null,
     };
 
     next();
+
   } catch (err) {
-    return res.status(401).json({
-      message: "Invalid or expired token",
-    });
+    // ✅ Distinguish expired vs invalid — client knows whether to refresh or re-login
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token expired. Please login again." });
+    }
+    return res.status(401).json({ message: "Invalid token." });
   }
 };
