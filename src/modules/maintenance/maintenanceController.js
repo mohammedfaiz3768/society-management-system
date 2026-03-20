@@ -198,4 +198,38 @@ exports.deleteBill = async (req, res) => {
   }
 };
 
-exports.getMyBills = asy
+exports.getMyBills = async (req, res) => {
+  const userId = req.user.id;
+  const societyId = req.societyId;
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+  const offset = (page - 1) * limit;
+
+  try {
+    const userResult = await pool.query(
+      "SELECT flat_number FROM users WHERE id=$1",
+      [userId]
+    );
+
+    const flat_number = userResult.rows[0]?.flat_number;
+
+    if (!flat_number) {
+      return res.status(400).json({ message: "No flat assigned to your account" });
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM maintenance_bills
+             WHERE flat_number = $1 AND society_id = $2
+             ORDER BY year DESC, month DESC
+             LIMIT $3 OFFSET $4`,
+      [flat_number, societyId, limit, offset]
+    );
+
+    return res.json(result.rows);
+
+  } catch (err) {
+    console.error("getMyBills error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
