@@ -1,7 +1,6 @@
 const db = require("../../config/db");
 const { sendSosPush } = require("../../hidden/notifications/notificationService");
-const { sendPushNotification } = require("../../utils/pushNotifications");
-const { sendPushToUser } = require("../../utils/fcm");
+const { admin, isInitialized } = require("../../config/firebase");
 const { EMERGENCY_SERVICES, getServiceForType } = require("../../config/emergencyServices");
 
 exports.createSOS = async (req, res) => {
@@ -182,46 +181,42 @@ exports.getEmergencyContacts = async (req, res) => {
 
 
 async function sendBuzzerAlert(sos, societyId) {
+  if (!isInitialized || !admin) return;
   try {
     const residents = await db.query(
-      `SELECT id, fcm_token, expo_push_token FROM users
+      `SELECT id, fcm_token FROM users
              WHERE society_id=$1 AND role='resident'
-             AND (fcm_token IS NOT NULL OR expo_push_token IS NOT NULL)`,
+             AND fcm_token IS NOT NULL`,
       [societyId]
     );
 
-    const pushPromises = residents.rows.map(async (resident) => {
-      const notification = {
-        sound: "default",
-        priority: "high",
-        title: "🚨 EMERGENCY ALERT",
-        body: `SOS from ${sos.user_name} - Flat ${sos.flat}`,
-        data: {
-          type: "SOS_BUZZER",
-          sosId: sos.id,
-          emergencyType: sos.emergency_type,
-          location: { lat: sos.location_lat, lng: sos.location_lng },
-          triggerBuzzer: true,
-        },
-        android: { priority: "max", sound: "alarm" },
-        ios: { sound: "alarm.wav", interruptionLevel: "critical" },
-      };
+    const tokens = residents.rows.map(r => r.fcm_token);
+    if (tokens.length === 0) return;
 
-      if (resident.fcm_token) {
-        await sendPushToUser(resident.fcm_token, {
-          title: notification.title,
-          body: notification.body,
-          data: notification.data,
-        });
-      } else if (resident.expo_push_token) {
-        await sendPushNotification({
-          ...notification,
-          to: resident.expo_push_token,
-        });
-      }
-    });
+    const notification = {
+      title: "🚨 EMERGENCY ALERT",
+      body: `SOS from ${sos.user_name} - Flat ${sos.flat}`
+    };
 
-    await Promise.allSettled(pushPromises);
+    const dataPayload = {
+      type: "SOS_BUZZER",
+      sosId: String(sos.id),
+      emergencyType: String(sos.emergency_type),
+      location_lat: String(sos.location_lat || ""),
+      location_lng: String(sos.location_lng || ""),
+      triggerBuzzer: "true"
+    };
+
+    const message = {
+      notification,
+      data: dataPayload,
+      tokens,
+      android: { priority: "high" },
+      apns: { payload: { aps: { sound: "default", contentAvailable: true } } }
+    };
+
+    const response = await admin.messaging().sendEachForMulticast(message);
+    console.log(`[SOS] Buzzer alert sent. Success: ${response.successCount}, Failed: ${response.failureCount}`);
 
   } catch (error) {
     console.error("Buzzer alert error:", error);

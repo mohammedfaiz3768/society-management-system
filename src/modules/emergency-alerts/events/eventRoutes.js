@@ -10,8 +10,8 @@ const {
   getEventById
 } = require("./eventController");
 
-const auth = require("../../middleware/authMiddleware");
-const requireRole = require("../../middleware/roleMiddleware");
+const auth = require("../../../middleware/authMiddleware");
+const requireRole = require("../../../middleware/roleMiddleware");
 
 router.use(auth);
 
