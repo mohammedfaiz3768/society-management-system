@@ -9,23 +9,19 @@ exports.createVisitor = async (req, res) => {
   const societyId = req.societyId;
   const { name, phone, purpose, flat_number } = req.body;
 
-  // ✅ flat_number added to required check
   if (!name || !phone || !flat_number) {
     return res.status(400).json({ message: "Name, phone and flat_number are required" });
   }
 
-  // ✅ Phone format validation
   if (!phoneRegex.test(phone)) {
     return res.status(400).json({ message: "Invalid phone number — must be 10 digits" });
   }
 
-  // ✅ Purpose length guard
   if (purpose && purpose.length > 200) {
     return res.status(400).json({ message: "Purpose must be under 200 characters" });
   }
 
   try {
-    // ✅ Validate flat exists BEFORE inserting visitor
     const flatCheck = await pool.query(
       `SELECT owner_id FROM flats WHERE flat_number = $1 AND society_id = $2`,
       [flat_number, societyId]
@@ -44,7 +40,6 @@ exports.createVisitor = async (req, res) => {
 
     const visitor = result.rows[0];
 
-    // Notify flat owner if they exist
     if (flatCheck.rows[0].owner_id) {
       await sendNotification(
         flatCheck.rows[0].owner_id,
@@ -82,7 +77,6 @@ exports.approveVisitor = async (req, res) => {
     return res.status(400).json({ message: "approved (true/false) is required" });
   }
 
-  // ✅ Role guard — only residents and admins can approve
   if (!["resident", "admin"].includes(req.user.role)) {
     return res.status(403).json({ message: "Only residents can approve visitors" });
   }
@@ -116,7 +110,6 @@ exports.approveVisitor = async (req, res) => {
 
     const updatedVisitor = updated.rows[0];
 
-    // ✅ More meaningful notification message
     await sendNotification(
       updatedVisitor.user_id,
       "Visitor Approval Update",
@@ -148,7 +141,6 @@ exports.markExit = async (req, res) => {
   const { id } = req.params;
 
   try {
-    // ✅ Only mark exit if visitor hasn't already exited
     const updated = await pool.query(
       `UPDATE visitors
              SET out_time = NOW()
@@ -158,7 +150,6 @@ exports.markExit = async (req, res) => {
     );
 
     if (updated.rows.length === 0) {
-      // Could be not found OR already exited — check which
       const exists = await pool.query(
         `SELECT id, out_time FROM visitors WHERE id = $1 AND society_id = $2`,
         [id, societyId]
@@ -192,7 +183,6 @@ exports.getResidentVisitors = async (req, res) => {
   const residentId = req.user.id;
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;
@@ -228,7 +218,6 @@ exports.getResidentVisitors = async (req, res) => {
 exports.getAllVisitors = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;

@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const db = require("../../config/db");
-const razorpayService = require("../../services/razorpayService"); // ✅ always use service
+const razorpayService = require("../../services/razorpayService");
 
 exports.createOrder = async (req, res) => {
   try {
@@ -12,7 +12,6 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ error: "bill_id is required" });
     }
 
-    // ✅ Fetch actual bill amount from DB — never trust client-sent amount
     const billResult = await db.query(
       `SELECT amount FROM maintenance_bills
              WHERE id = $1 AND user_id = $2 AND society_id = $3 AND status = 'PENDING'`,
@@ -25,7 +24,6 @@ exports.createOrder = async (req, res) => {
 
     const amount = billResult.rows[0].amount;
 
-    // ✅ Check for existing pending order — prevent double payments
     const existing = await db.query(
       `SELECT order_id FROM payments
              WHERE user_id = $1 AND bill_id = $2 AND status = 'PENDING'`,
@@ -36,7 +34,6 @@ exports.createOrder = async (req, res) => {
       return res.json({ order_id: existing.rows[0].order_id });
     }
 
-    // ✅ Use service — includes Math.round, receipt cap, isInitialized guard
     const receipt = `rcpt_${userId}_${Date.now()}`;
     const order = await razorpayService.createOrder(amount, receipt);
 
@@ -63,7 +60,6 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "order_id, payment_id and signature are required" });
     }
 
-    // ✅ Verify order exists in our DB first — prevent forged orders
     const paymentRow = await db.query(
       `SELECT * FROM payments WHERE order_id = $1 AND society_id = $2`,
       [order_id, societyId]
@@ -73,19 +69,16 @@ exports.verifyPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    // ✅ Prevent double processing
     if (paymentRow.rows[0].status === "SUCCESS") {
       return res.json({ success: true, message: "Payment already verified" });
     }
 
-    // ✅ Use service — includes timingSafeEqual, input validation
     const isValid = razorpayService.verifyPayment(order_id, payment_id, signature);
 
     if (!isValid) {
       return res.status(400).json({ success: false, message: "Invalid payment signature" });
     }
 
-    // ✅ Update payment AND the bill in a transaction — both or neither
     await db.query("BEGIN");
     try {
       await db.query(

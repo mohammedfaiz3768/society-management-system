@@ -5,7 +5,6 @@ exports.createSlot = async (req, res) => {
   const { slot_number, type, flat_number } = req.body;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can create parking slots" });
   }
@@ -15,7 +14,6 @@ exports.createSlot = async (req, res) => {
   }
 
   try {
-    // ✅ Duplicate slot number check
     const existing = await pool.query(
       "SELECT id FROM parking_slots WHERE slot_number=$1 AND society_id=$2",
       [slot_number, societyId]
@@ -43,7 +41,6 @@ exports.assignSlot = async (req, res) => {
   const { slot_id, user_id } = req.body;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can assign parking slots" });
   }
@@ -53,7 +50,6 @@ exports.assignSlot = async (req, res) => {
   }
 
   try {
-    // ✅ Verify user belongs to this society
     const userCheck = await pool.query(
       "SELECT flat_number FROM users WHERE id=$1 AND society_id=$2",
       [user_id, societyId]
@@ -64,7 +60,6 @@ exports.assignSlot = async (req, res) => {
 
     const flat_number = userCheck.rows[0].flat_number || null;
 
-    // ✅ Society scoped UPDATE, correct status
     const updated = await pool.query(
       `UPDATE parking_slots
              SET assigned_to=$1, flat_number=$2, status='occupied'
@@ -88,7 +83,6 @@ exports.assignSlot = async (req, res) => {
 exports.getAllSlots = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 200);
   const offset = (page - 1) * limit;
@@ -117,7 +111,6 @@ exports.getMySlot = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Society scoped
     const slot = await pool.query(
       "SELECT * FROM parking_slots WHERE assigned_to=$1 AND society_id=$2",
       [userId, societyId]
@@ -140,14 +133,12 @@ exports.addVehicle = async (req, res) => {
     return res.status(400).json({ message: "vehicle_number is required" });
   }
 
-  // ✅ Vehicle number format validation
   const vehicleRegex = /^[A-Z]{2}[0-9]{2}[A-Z]{1,2}[0-9]{4}$/;
   if (!vehicleRegex.test(vehicle_number.toUpperCase())) {
     return res.status(400).json({ message: "Invalid vehicle number format (e.g. MH12AB1234)" });
   }
 
   try {
-    // ✅ Duplicate vehicle number check in society
     const existing = await pool.query(
       "SELECT id FROM vehicles WHERE vehicle_number=$1 AND society_id=$2",
       [vehicle_number.toUpperCase(), societyId]
@@ -162,7 +153,6 @@ exports.addVehicle = async (req, res) => {
     );
     const flat_number = userResult.rows[0]?.flat_number || null;
 
-    // ✅ society_id included
     const result = await pool.query(
       `INSERT INTO vehicles (user_id, flat_number, vehicle_number, vehicle_type, model, color, society_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -200,13 +190,11 @@ exports.addVisitorVehicle = async (req, res) => {
   const societyId = req.societyId;
   const { visitor_name, vehicle_number, purpose, flat_number, slot_number } = req.body;
 
-  // ✅ Required field validation
   if (!visitor_name || !vehicle_number) {
     return res.status(400).json({ message: "visitor_name and vehicle_number are required" });
   }
 
   try {
-    // ✅ society_id included
     const result = await pool.query(
       `INSERT INTO visitor_parking
              (visitor_name, vehicle_number, purpose, flat_number, slot_number, guard_id, society_id)
@@ -228,7 +216,6 @@ exports.exitVisitorVehicle = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Society scoped, double-exit prevention, existence check
     const result = await pool.query(
       `UPDATE visitor_parking
              SET out_time=NOW()
@@ -259,13 +246,11 @@ exports.exitVisitorVehicle = async (req, res) => {
 exports.getVisitorLogs = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;
 
   try {
-    // ✅ Society scoped — was returning ALL societies' data
     const result = await pool.query(
       `SELECT vp.*, u.name AS guard_name
              FROM visitor_parking vp

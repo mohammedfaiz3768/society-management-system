@@ -3,7 +3,6 @@ const pool = require("../../config/db");
 exports.getAdminStats = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Admin access required" });
   }
@@ -25,7 +24,6 @@ exports.getAdminStats = async (req, res) => {
       documentsRes,
       announcementsRes,
     ] = await Promise.all([
-      // ✅ All queries scoped to societyId — no platform-wide leaks
       pool.query("SELECT COUNT(*) FROM users WHERE role='resident' AND society_id=$1", [societyId]),
       pool.query("SELECT COUNT(*) FROM users WHERE role='guard' AND society_id=$1", [societyId]),
       pool.query("SELECT COUNT(*) FROM users WHERE role='admin' AND society_id=$1", [societyId]),
@@ -69,7 +67,7 @@ exports.getAdminStats = async (req, res) => {
 
 exports.getResidentStats = async (req, res) => {
   const userId = req.user.id;
-  const societyId = req.societyId; // ✅ was missing entirely
+  const societyId = req.societyId;
 
   try {
     const [
@@ -82,7 +80,6 @@ exports.getResidentStats = async (req, res) => {
       latestAnnouncementsRes,
     ] = await Promise.all([
       pool.query(
-        // ✅ Society-scoped JOIN — prevents wrong flat from same number in other society
         `SELECT f.* FROM flats f
                  JOIN users u ON f.flat_number = u.flat_number
                               AND f.society_id = u.society_id
@@ -90,13 +87,11 @@ exports.getResidentStats = async (req, res) => {
         [userId]
       ),
       pool.query(
-        // ✅ Society scoped
         `SELECT COUNT(*) FROM complaints
                  WHERE user_id=$1 AND society_id=$2 AND status != 'resolved'`,
         [userId, societyId]
       ),
       pool.query(
-        // ✅ Society scoped
         `SELECT COUNT(*) FROM service_requests
                  WHERE user_id=$1 AND society_id=$2 AND status != 'completed'`,
         [userId, societyId]
@@ -112,7 +107,6 @@ exports.getResidentStats = async (req, res) => {
         [userId]
       ),
       pool.query(
-        // ✅ Society scoped
         `SELECT * FROM events
                  WHERE date >= CURRENT_DATE AND society_id=$1
                  ORDER BY date ASC, start_time ASC
@@ -120,7 +114,6 @@ exports.getResidentStats = async (req, res) => {
         [societyId]
       ),
       pool.query(
-        // ✅ Society scoped
         `SELECT * FROM notices
                  WHERE society_id=$1
                  ORDER BY created_at DESC
@@ -149,7 +142,6 @@ exports.getGuardStats = async (req, res) => {
   const guardId = req.user.id;
   const societyId = req.societyId;
 
-  // ✅ Guard/admin only
   if (!["guard", "admin"].includes(req.user.role)) {
     return res.status(403).json({ message: "Guard access required" });
   }
@@ -172,13 +164,11 @@ exports.getGuardStats = async (req, res) => {
         [guardId]
       ),
       pool.query(
-        // ✅ Society scoped
         `SELECT COUNT(*) FROM emergency_alerts
                  WHERE status != 'resolved' AND society_id=$1`,
         [societyId]
       ),
       pool.query(
-        // ✅ Society scoped
         `SELECT * FROM announcements
                  WHERE society_id=$1
                  ORDER BY created_at DESC

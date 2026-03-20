@@ -7,8 +7,6 @@ const societyMiddleware = (req, res, next) => {
         return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Read society_id from JWT token (no DB query needed)
-    // Make sure society_id is included when creating the token in auth controller
     req.societyId = req.user.society_id || null;
 
     if (!req.societyId) {

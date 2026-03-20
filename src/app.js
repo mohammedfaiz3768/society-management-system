@@ -4,15 +4,12 @@ const path = require("path");
 
 const app = express();
 
-// ✅ One CORS call, restricted to your actual frontends
 app.use(cors({
     origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:3000"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
 }));
 
-// ✅ Webhook gets raw body BEFORE express.json() — required for signature verification
-// ✅ Registered once, in one place
 const razorpayWebhook = require("./routes/razorpayWebhook");
 app.use(
     "/api/razorpay/webhook",
@@ -20,28 +17,22 @@ app.use(
     razorpayWebhook
 );
 
-// JSON parser for all other routes
 app.use(express.json());
 
 const authMiddleware = require("./middleware/authMiddleware");
 const societyMiddleware = require("./middleware/societyMiddleware");
 
-// Health check
 app.get("/", (req, res) => {
     res.json({ message: "Society backend running" });
 });
 
-// ⚠️ TODO: Move to signed URLs (S3/Cloudinary) before production
-// Currently all uploaded files are publicly accessible by URL
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ── Public routes ────────────────────────────────────────────────────────────
 app.use("/api/auth", require("./modules/auth"));
 app.use("/api/societies", require("./modules/societies"));
 app.use("/api/invitations", require("./modules/invitations/invitationRoutes"));
 app.use("/api/registration", require("./modules/registration/registrationRoutes"));
 
-// ── Protected routes ─────────────────────────────────────────────────────────
 app.use("/api/users", authMiddleware, societyMiddleware, require("./modules/users"));
 app.use("/api/flats", authMiddleware, societyMiddleware, require("./modules/flat"));
 app.use("/api/notices", authMiddleware, societyMiddleware, require("./modules/notices"));
@@ -63,16 +54,10 @@ app.use("/api/timeline", authMiddleware, societyMiddleware, require("./modules/t
 app.use("/api/dashboard", authMiddleware, societyMiddleware, require("./modules/dashboard"));
 app.use("/api/notifications", authMiddleware, societyMiddleware, require("./routes/notificationRoutes"));
 
-// ✅ Added auth to invoices and services — these should not be public
 app.use("/api/invoices", authMiddleware, societyMiddleware, require("./routes/invoiceRoutes"));
 app.use("/api/services", authMiddleware, societyMiddleware, require("./routes/serviceRoutes"));
 
-// Feature-flagged routes (enable when ready)
-// app.use("/api/cctv", require("./hidden/cctv/cctvRoutes"));
-// app.use("/api/ai",   require("./hidden/ai/aiDashboardRoutes"));
-// app.use("/api/chat", require("./hidden/chat/chatRoutes"));
 
-// ✅ Global error handler — catches any unhandled errors from all routes
 app.use((err, req, res, next) => {
     console.error("Unhandled error:", err);
     res.status(500).json({ message: "Internal server error" });

@@ -1,7 +1,7 @@
 const db = require("../../config/db");
 const { sendSosPush } = require("../../hidden/notifications/notificationService");
-const { sendPushNotification } = require("../../utils/pushNotifications"); // ✅ moved to top
-const { sendPushToUser } = require("../../utils/fcm");                     // ✅ moved to top
+const { sendPushNotification } = require("../../utils/pushNotifications");
+const { sendPushToUser } = require("../../utils/fcm");
 const { EMERGENCY_SERVICES, getServiceForType } = require("../../config/emergencyServices");
 
 exports.createSOS = async (req, res) => {
@@ -10,7 +10,6 @@ exports.createSOS = async (req, res) => {
     const societyId = req.societyId;
     const { lat, lng, message, type, trigger_buzzer, auto_call } = req.body;
 
-    // ✅ Always fetch fresh user data — JWT may have stale flat/block info
     const userResult = await db.query(
       `SELECT name, block, flat_number FROM users WHERE id=$1`,
       [user.id]
@@ -22,7 +21,6 @@ exports.createSOS = async (req, res) => {
 
     const freshUser = userResult.rows[0];
 
-    // ✅ Warn if no GPS — still save the SOS
     if (!lat || !lng) {
       console.warn(`SOS created without GPS coordinates for user ${user.id}`);
     }
@@ -40,9 +38,9 @@ exports.createSOS = async (req, res) => {
              RETURNING *`,
       [
         user.id,
-        freshUser.name,           // ✅ fresh from DB
-        freshUser.block,          // ✅ fresh from DB
-        freshUser.flat_number,    // ✅ fresh from DB
+        freshUser.name,
+        freshUser.block,
+        freshUser.flat_number,
         lat || null,
         lng || null,
         message || "SOS Emergency",
@@ -56,7 +54,6 @@ exports.createSOS = async (req, res) => {
 
     const sos = insert.rows[0];
 
-    // ✅ Emit via Socket.IO for users currently online in the app
     const io = req.app.get("socketio");
     if (io) {
       io.to(`society_${societyId}`).emit("sos-alert", {
@@ -68,7 +65,6 @@ exports.createSOS = async (req, res) => {
       });
     }
 
-    // Push notifications in background — don't block response
     if (trigger_buzzer) {
       sendBuzzerAlert(sos, societyId).catch(console.error);
     } else {
@@ -93,7 +89,6 @@ exports.respondSOS = async (req, res) => {
       return res.status(400).json({ error: "sos_id is required" });
     }
 
-    // ✅ Verify SOS belongs to this society — prevent cross-society access
     const sosCheck = await db.query(
       `SELECT id FROM sos_alerts WHERE id=$1 AND society_id=$2`,
       [sos_id, societyId]
@@ -129,12 +124,10 @@ exports.resolveSOS = async (req, res) => {
     const resolver = req.user;
     const societyId = req.societyId;
 
-    // ✅ Only admins or guards can resolve SOS alerts
     if (!["admin", "guard"].includes(resolver.role)) {
       return res.status(403).json({ error: "Only admins or guards can resolve SOS alerts" });
     }
 
-    // ✅ Scoped to society — prevent cross-society resolution
     const result = await db.query(
       `UPDATE sos_alerts
              SET status='RESOLVED', resolved_at=NOW()
@@ -187,7 +180,6 @@ exports.getEmergencyContacts = async (req, res) => {
   }
 };
 
-// ── Internal helper ──────────────────────────────────────────────────────────
 
 async function sendBuzzerAlert(sos, societyId) {
   try {
@@ -215,7 +207,6 @@ async function sendBuzzerAlert(sos, societyId) {
         ios: { sound: "alarm.wav", interruptionLevel: "critical" },
       };
 
-      // ✅ FCM branch is now filled in — was empty before
       if (resident.fcm_token) {
         await sendPushToUser(resident.fcm_token, {
           title: notification.title,
@@ -230,7 +221,6 @@ async function sendBuzzerAlert(sos, societyId) {
       }
     });
 
-    // ✅ allSettled — one failed token doesn't cancel the whole broadcast
     await Promise.allSettled(pushPromises);
 
   } catch (error) {

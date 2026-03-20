@@ -1,7 +1,7 @@
 const pool = require("../../config/db");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs"); // ✅ moved to top — never require inside functions
-const crypto = require("crypto");   // ✅ for hashing OTPs
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const dotenv = require("dotenv");
 const { logActivity } = require("../../utils/activityLogger");
 const { sendEmail } = require("../../utils/sendEmail");
@@ -9,18 +9,16 @@ const authConfig = require("../../config/authConfig");
 
 dotenv.config();
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// ✅ Hash OTP before storing — if DB is breached, raw OTPs are never exposed
+
 function hashOtp(otp) {
   return crypto.createHash("sha256").update(otp).digest("hex");
 }
 
-// ✅ society_id added to token — societyMiddleware no longer needs a DB query
 function createToken(user) {
   return jwt.sign(
     {
@@ -34,7 +32,6 @@ function createToken(user) {
   );
 }
 
-// ✅ Only safe fields returned to client — never expose password_hash, fcm_token etc.
 function safeUser(user) {
   return {
     id: user.id,
@@ -49,7 +46,6 @@ function safeUser(user) {
   };
 }
 
-// ─── Phone OTP ──────────────────────────────────────────────────────────────
 
 exports.requestOtp = async (req, res) => {
   const phone = (req.body.phone || "").trim();
@@ -61,7 +57,6 @@ exports.requestOtp = async (req, res) => {
   try {
     const now = Date.now();
 
-    // Rate limit: max 5 per hour
     const oneHourAgo = new Date(now - 60 * 60 * 1000);
     const hourly = await pool.query(
       `SELECT COUNT(*) FROM otp_codes WHERE phone = $1 AND created_at > $2`,
@@ -71,7 +66,6 @@ exports.requestOtp = async (req, res) => {
       return res.status(429).json({ message: "Too many OTP requests. Try again after 1 hour." });
     }
 
-    // Rate limit: max 3 per minute
     const oneMinuteAgo = new Date(now - 60 * 1000);
     const minute = await pool.query(
       `SELECT COUNT(*) FROM otp_codes WHERE phone = $1 AND created_at > $2`,
@@ -81,7 +75,6 @@ exports.requestOtp = async (req, res) => {
       return res.status(429).json({ message: "Too many OTP requests. Please wait a minute." });
     }
 
-    // Find or create user
     let userResult = await pool.query("SELECT * FROM users WHERE phone = $1", [phone]);
     if (userResult.rows.length === 0) {
       userResult = await pool.query(
@@ -100,19 +93,17 @@ exports.requestOtp = async (req, res) => {
     }
 
     const otp = generateOtp();
-    const otpHash = hashOtp(otp); // ✅ store hash, not raw OTP
+    const otpHash = hashOtp(otp);
 
-    // Invalidate old OTPs
     await pool.query(`UPDATE otp_codes SET used = TRUE WHERE phone = $1`, [phone]);
 
-    // Store hashed OTP
     await pool.query(
       `INSERT INTO otp_codes (phone, otp, expires_at, used, created_at)
        VALUES ($1, $2, NOW() + INTERVAL '5 minutes', FALSE, NOW())`,
       [phone, otpHash]
     );
 
-    await sendEmail(user.email, "Your Login OTP", otp); // send raw OTP to user
+    await sendEmail(user.email, "Your Login OTP", otp);
 
     await logActivity({
       userId: user.id,
@@ -139,7 +130,7 @@ exports.verifyOtp = async (req, res) => {
   }
 
   try {
-    const codeHash = hashOtp(code); // ✅ hash before comparing
+    const codeHash = hashOtp(code);
 
     const otpRow = await pool.query(
       `SELECT * FROM otp_codes
@@ -188,18 +179,16 @@ exports.verifyOtp = async (req, res) => {
       description: `User logged in via OTP`,
     });
 
-    return res.json({ token, user: safeUser(user) }); // ✅ never return raw user row
+    return res.json({ token, user: safeUser(user) });
   } catch (err) {
     console.error("verifyOtp error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
-// ─── Get Current User ────────────────────────────────────────────────────────
 
 exports.getMe = async (req, res) => {
   try {
-    // ✅ Select only safe fields — never SELECT *
     const result = await pool.query(
       `SELECT id, name, email, phone, role, society_id, block, flat_number, is_first_login
        FROM users WHERE id = $1`,
@@ -217,7 +206,6 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// ─── FCM Token ───────────────────────────────────────────────────────────────
 
 exports.saveFcmToken = async (req, res) => {
   const userId = req.user.id;
@@ -245,7 +233,6 @@ exports.saveFcmToken = async (req, res) => {
   }
 };
 
-// ─── Resend OTP ───────────────────────────────────────────────────────────────
 
 exports.resendOtp = async (req, res) => {
   const { phone } = req.body;
@@ -255,7 +242,6 @@ exports.resendOtp = async (req, res) => {
   }
 
   try {
-    // ✅ Check user FIRST before touching OTP table
     const userResult = await pool.query(`SELECT * FROM users WHERE phone = $1`, [phone]);
     if (userResult.rows.length === 0) {
       return res.status(400).json({ message: "User not found" });
@@ -263,7 +249,6 @@ exports.resendOtp = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Cooldown check
     const recentOtp = await pool.query(
       `SELECT * FROM otp_codes WHERE phone = $1 ORDER BY id DESC LIMIT 1`,
       [phone]
@@ -279,7 +264,7 @@ exports.resendOtp = async (req, res) => {
     }
 
     const otp = generateOtp();
-    const otpHash = hashOtp(otp); // ✅ store hash
+    const otpHash = hashOtp(otp);
 
     await pool.query(`UPDATE otp_codes SET used = TRUE WHERE phone = $1`, [phone]);
     await pool.query(
@@ -300,7 +285,6 @@ exports.resendOtp = async (req, res) => {
   }
 };
 
-// ─── Update Email ─────────────────────────────────────────────────────────────
 
 exports.updateEmail = async (req, res) => {
   const { email } = req.body;
@@ -310,14 +294,12 @@ exports.updateEmail = async (req, res) => {
     return res.status(400).json({ message: "Email is required" });
   }
 
-  // ✅ Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ message: "Invalid email format" });
   }
 
   try {
-    // ✅ Check if email already belongs to another user
     const existing = await pool.query(
       `SELECT id FROM users WHERE email = $1 AND id != $2`,
       [email.toLowerCase(), userId]
@@ -338,7 +320,6 @@ exports.updateEmail = async (req, res) => {
   }
 };
 
-// ─── Email OTP ────────────────────────────────────────────────────────────────
 
 exports.requestOtpByEmail = async (req, res) => {
   const email = (req.body.email || "").trim().toLowerCase();
@@ -415,7 +396,7 @@ exports.requestOtpByEmail = async (req, res) => {
 
     const user = userResult.rows[0];
     const otp = generateOtp();
-    const otpHash = hashOtp(otp); // ✅ store hash
+    const otpHash = hashOtp(otp);
 
     await pool.query(`DELETE FROM otp_codes WHERE email = $1`, [email]);
     await pool.query(
@@ -423,12 +404,10 @@ exports.requestOtpByEmail = async (req, res) => {
       [email, otpHash]
     );
 
-    // ✅ Only log OTP in development — never in production
     if (process.env.NODE_ENV !== "production") {
       console.log(`[DEV] EMAIL OTP for ${email}: ${otp}`);
     }
 
-    // Send email in background — don't block the response
     sendEmail(email, "Your Login OTP", otp).catch((err) =>
       console.error("Email send failed:", err.message)
     );
@@ -463,7 +442,7 @@ exports.verifyOtpByEmail = async (req, res) => {
   }
 
   try {
-    const codeHash = hashOtp(code); // ✅ hash before comparing
+    const codeHash = hashOtp(code);
 
     const otpRow = await pool.query(
       `SELECT * FROM otp_codes
@@ -544,7 +523,7 @@ exports.verifyOtpByEmail = async (req, res) => {
       description: `User logged in via email: ${email}`,
     });
 
-    return res.json({ message: "Login successful", token, user: safeUser(user) }); // ✅ safe user
+    return res.json({ message: "Login successful", token, user: safeUser(user) });
 
   } catch (err) {
     console.error("verifyOtpByEmail error:", err);
@@ -552,7 +531,6 @@ exports.verifyOtpByEmail = async (req, res) => {
   }
 };
 
-// ─── Password Login ───────────────────────────────────────────────────────────
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -574,7 +552,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Please use OTP login for this account" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password_hash); // ✅ bcrypt at top of file
+    const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -589,7 +567,7 @@ exports.login = async (req, res) => {
       description: `User logged in via password`,
     });
 
-    return res.json({ token, user: safeUser(user) }); // ✅ safe user
+    return res.json({ token, user: safeUser(user) });
 
   } catch (err) {
     console.error("Login error:", err);
@@ -597,7 +575,6 @@ exports.login = async (req, res) => {
   }
 };
 
-// ─── Password Change ──────────────────────────────────────────────────────────
 
 exports.requestPasswordChangeOtp = async (req, res) => {
   const userId = req.user.id;
@@ -619,7 +596,7 @@ exports.requestPasswordChangeOtp = async (req, res) => {
       return res.status(400).json({ message: "No password set. Please contact administrator." });
     }
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password_hash); // ✅ bcrypt at top
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
     if (!isMatch) {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
@@ -630,10 +607,9 @@ exports.requestPasswordChangeOtp = async (req, res) => {
     await pool.query(
       `INSERT INTO otps (identifier, otp_code, expires_at) VALUES ($1, $2, $3)
        ON CONFLICT (identifier) DO UPDATE SET otp_code = $2, expires_at = $3`,
-      [user.email, hashOtp(otp), expiresAt] // ✅ store hash
+      [user.email, hashOtp(otp), expiresAt]
     );
 
-    // ✅ Only log in development
     if (process.env.NODE_ENV !== "production") {
       console.log(`[DEV] PASSWORD CHANGE OTP for ${user.email}: ${otp}`);
     }
@@ -678,7 +654,7 @@ exports.verifyOtpAndChangePassword = async (req, res) => {
 
     const otpResult = await pool.query(
       `SELECT * FROM otps WHERE identifier = $1 AND otp_code = $2 AND expires_at > NOW()`,
-      [user.email, hashOtp(otp)] // ✅ hash before comparing
+      [user.email, hashOtp(otp)]
     );
 
     if (otpResult.rows.length === 0) {
@@ -711,7 +687,6 @@ exports.verifyOtpAndChangePassword = async (req, res) => {
   }
 };
 
-// ─── Admin OTP ────────────────────────────────────────────────────────────────
 
 exports.adminRequestOtp = async (req, res) => {
   const { email } = req.body;
@@ -737,10 +712,9 @@ exports.adminRequestOtp = async (req, res) => {
     await pool.query(
       `INSERT INTO otps (identifier, otp_code, expires_at) VALUES ($1, $2, $3)
        ON CONFLICT (identifier) DO UPDATE SET otp_code = $2, expires_at = $3`,
-      [email, hashOtp(otp), expiresAt] // ✅ store hash
+      [email, hashOtp(otp), expiresAt]
     );
 
-    // ✅ Only log in development
     if (process.env.NODE_ENV !== "production") {
       console.log(`[DEV] ADMIN OTP for ${email}: ${otp}`);
     }
@@ -773,7 +747,7 @@ exports.adminVerifyOtp = async (req, res) => {
   try {
     const otpResult = await pool.query(
       `SELECT * FROM otps WHERE identifier = $1 AND otp_code = $2 AND expires_at > NOW()`,
-      [email, hashOtp(otp)] // ✅ hash before comparing
+      [email, hashOtp(otp)]
     );
 
     if (otpResult.rows.length === 0) {
@@ -803,7 +777,7 @@ exports.adminVerifyOtp = async (req, res) => {
       description: `Admin logged in via OTP`,
     });
 
-    return res.json({ token, user: safeUser(user) }); // ✅ safe user
+    return res.json({ token, user: safeUser(user) });
 
   } catch (err) {
     console.error("adminVerifyOtp error:", err);

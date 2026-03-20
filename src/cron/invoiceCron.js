@@ -1,7 +1,6 @@
 const cron = require("node-cron");
 const pool = require("../config/db");
 
-// Runs at midnight on the 1st of every month — IST timezone
 cron.schedule("0 0 1 * *", async () => {
   const monthYear = new Date().toISOString().slice(0, 7);
   console.log(`[invoiceCron] Starting invoice generation for ${monthYear}...`);
@@ -34,15 +33,12 @@ cron.schedule("0 0 1 * *", async () => {
       [monthYear]
     );
 
-    // ✅ Log exactly how many invoices were created
     console.log(`[invoiceCron] Done — ${result.rowCount} invoices generated for ${monthYear}`);
 
   } catch (err) {
     console.error(`[invoiceCron] FAILED for ${monthYear}:`, err);
-    // ✅ TODO: Alert admin when billing cron fails
-    // await sendEmail(process.env.ADMIN_EMAIL, "Billing Cron Failed", err.message);
   }
 
-}, { timezone: "Asia/Kolkata" }); // ✅ Explicit timezone — don't rely on server default
+}, { timezone: "Asia/Kolkata" });
 
 console.log("[invoiceCron] Loaded — scheduled for 1st of every month at midnight IST");

@@ -10,10 +10,10 @@ exports.createOrder = async (amount, receipt) => {
     throw new Error("Invalid amount");
   }
 
-  const safeReceipt = receipt?.toString().slice(0, 40); // ✅ Razorpay 40 char limit
+  const safeReceipt = receipt?.toString().slice(0, 40);
 
   return await razorpay.orders.create({
-    amount: Math.round(amount * 100), // ✅ Math.round prevents float precision errors
+    amount: Math.round(amount * 100),
     currency: "INR",
     receipt: safeReceipt,
   });
@@ -25,7 +25,7 @@ exports.verifyPayment = (orderId, paymentId, signature) => {
   }
 
   if (!orderId || !paymentId || !signature) {
-    return false; // ✅ fail safely on missing input
+    return false;
   }
 
   try {
@@ -33,13 +33,12 @@ exports.verifyPayment = (orderId, paymentId, signature) => {
     hmac.update(orderId + "|" + paymentId);
     const generatedSignature = hmac.digest("hex");
 
-    // ✅ timing-safe comparison — prevents timing attack signature guessing
     return crypto.timingSafeEqual(
       Buffer.from(generatedSignature, "hex"),
       Buffer.from(signature, "hex")
     );
   } catch {
-    return false; // ✅ malformed signature never crashes the server
+    return false;
   }
 };
 
@@ -53,7 +52,7 @@ exports.refundPayment = async (paymentId, amount) => {
   }
 
   return await razorpay.payments.refund(paymentId, {
-    amount: Math.round(amount * 100), // ✅ Math.round
+    amount: Math.round(amount * 100),
   });
 };
 
@@ -72,7 +71,7 @@ exports.createPlan = async (amount, period = "monthly") => {
     interval: 1,
     item: {
       name: `Maintenance Plan (${period})`,
-      amount: Math.round(amount * 100), // ✅ Math.round
+      amount: Math.round(amount * 100),
       currency: "INR",
     },
   });

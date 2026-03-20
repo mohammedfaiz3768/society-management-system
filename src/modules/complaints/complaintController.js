@@ -13,7 +13,6 @@ exports.createComplaint = async (req, res) => {
     return res.status(400).json({ message: "Title is required" });
   }
 
-  // ✅ Length validation
   if (title.length > 100) {
     return res.status(400).json({ message: "Title must be under 100 characters" });
   }
@@ -52,7 +51,6 @@ exports.getMyComplaints = async (req, res) => {
   const userId = req.user.id;
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;
@@ -77,13 +75,11 @@ exports.getMyComplaints = async (req, res) => {
 exports.getAllComplaints = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Pagination + optional status filter
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;
   const { status } = req.query;
 
-  // ✅ Validate status filter if provided
   if (status && !VALID_STATUSES.includes(status)) {
     return res.status(400).json({
       message: `Invalid status filter. Must be one of: ${VALID_STATUSES.join(", ")}`
@@ -115,12 +111,10 @@ exports.updateComplaint = async (req, res) => {
   const { status, admin_comment } = req.body;
   const societyId = req.societyId;
 
-  // ✅ Only admins can update complaints
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can update complaints" });
   }
 
-  // ✅ Validate status if provided
   if (status && !VALID_STATUSES.includes(status)) {
     return res.status(400).json({
       message: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`
@@ -148,16 +142,14 @@ exports.updateComplaint = async (req, res) => {
              RETURNING *`,
       [
         status || old.status,
-        // ✅ Only overwrite comment if explicitly provided — preserves existing
         admin_comment !== undefined ? admin_comment : old.admin_comment,
         id,
-        societyId, // ✅ UPDATE also scoped to society
+        societyId,
       ]
     );
 
     const updatedComplaint = updated.rows[0];
 
-    // ✅ Notify the resident their complaint was acted on
     await sendNotification(
       old.user_id,
       "Complaint Update",

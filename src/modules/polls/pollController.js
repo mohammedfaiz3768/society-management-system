@@ -7,7 +7,6 @@ exports.createPoll = async (req, res) => {
   const societyId = req.societyId;
   const { question, options, closes_at } = req.body;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can create polls" });
   }
@@ -16,7 +15,6 @@ exports.createPoll = async (req, res) => {
     return res.status(400).json({ message: "Question and at least 2 options required" });
   }
 
-  // ✅ Validate and clean options
   if (options.length > 10) {
     return res.status(400).json({ message: "Maximum 10 options allowed" });
   }
@@ -28,7 +26,6 @@ exports.createPoll = async (req, res) => {
     return res.status(400).json({ message: "Duplicate options are not allowed" });
   }
 
-  // ✅ Validate closes_at if provided
   if (closes_at && new Date(closes_at) <= new Date()) {
     return res.status(400).json({ message: "closes_at must be a future date" });
   }
@@ -62,10 +59,8 @@ exports.createPoll = async (req, res) => {
       description: question,
     });
 
-    // ✅ COMMIT before notifications — poll creation never fails due to push errors
     await client.query("COMMIT");
 
-    // ✅ Notify after commit, parallel, non-blocking
     const users = await pool.query(
       `SELECT id FROM users WHERE role = 'resident' AND society_id = $1`,
       [societyId]
@@ -90,7 +85,6 @@ exports.getActivePolls = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Single JOIN query instead of N+1
     const result = await pool.query(
       `SELECT 
                 p.id, p.question, p.closes_at, p.created_at,
@@ -107,7 +101,6 @@ exports.getActivePolls = async (req, res) => {
       [societyId]
     );
 
-    // Group options under their poll
     const pollMap = new Map();
     for (const row of result.rows) {
       if (!pollMap.has(row.id)) {
@@ -141,7 +134,6 @@ exports.getPollDetails = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Scoped to society
     const poll = await pool.query(
       `SELECT * FROM polls WHERE id = $1 AND society_id = $2`,
       [id, societyId]
@@ -175,7 +167,6 @@ exports.submitVote = async (req, res) => {
   }
 
   try {
-    // ✅ Scoped to society
     const pollResult = await pool.query(
       `SELECT * FROM polls WHERE id = $1 AND society_id = $2`,
       [poll_id, societyId]
@@ -187,12 +178,10 @@ exports.submitVote = async (req, res) => {
 
     const poll = pollResult.rows[0];
 
-    // ✅ Check poll hasn't closed
     if (poll.closes_at && new Date(poll.closes_at) < new Date()) {
       return res.status(400).json({ message: "This poll has closed" });
     }
 
-    // ✅ Verify option belongs to this poll — prevent cross-poll voting
     const optionCheck = await pool.query(
       `SELECT id FROM poll_options WHERE id = $1 AND poll_id = $2`,
       [option_id, poll_id]
@@ -201,7 +190,6 @@ exports.submitVote = async (req, res) => {
       return res.status(400).json({ message: "Invalid option for this poll" });
     }
 
-    // ✅ Default to single-choice if type not set
     const isSingleChoice = !poll.type || poll.type === "single";
     if (isSingleChoice) {
       await pool.query(
@@ -240,7 +228,6 @@ exports.getPollResults = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Scoped to society
     const pollCheck = await pool.query(
       `SELECT closes_at FROM polls WHERE id = $1 AND society_id = $2`,
       [id, societyId]
@@ -253,7 +240,6 @@ exports.getPollResults = async (req, res) => {
     const isClosed = pollCheck.rows[0].closes_at &&
       new Date(pollCheck.rows[0].closes_at) < new Date();
 
-    // ✅ Only admins see live results — residents must wait until poll closes
     if (!isClosed && req.user.role !== "admin") {
       return res.status(403).json({
         message: "Results are available after the poll closes"

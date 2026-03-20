@@ -3,8 +3,8 @@ const db = require("../config/db");
 function initWebrtcSignaling(io) {
   const nsp = io.of("/webrtc");
 
-  const publishers = new Map(); // cameraId -> publisherSocketId
-  const viewers = new Map();    // cameraId -> Set of viewerSocketIds
+  const publishers = new Map();
+  const viewers = new Map();
 
   nsp.on("connection", (socket) => {
     if (process.env.NODE_ENV !== "production") {
@@ -19,8 +19,6 @@ function initWebrtcSignaling(io) {
           return;
         }
 
-        // ✅ Role comes from DB — client cannot fake it
-        // ✅ Token must be unused to prevent replay attacks
         const { rows } = await db.query(
           `SELECT * FROM cctv_view_tokens
                      WHERE token = $1
@@ -36,7 +34,6 @@ function initWebrtcSignaling(io) {
           return;
         }
 
-        // ✅ Mark token as used immediately — single use only
         await db.query(
           `UPDATE cctv_view_tokens 
                      SET used = TRUE, used_at = NOW() 
@@ -44,7 +41,6 @@ function initWebrtcSignaling(io) {
           [token]
         );
 
-        // ✅ Trust role from DB, never from client payload
         socket.data.cameraId = cameraId;
         socket.data.role = rows[0].role || "viewer";
         socket.join(`cam_${cameraId}`);
@@ -59,7 +55,6 @@ function initWebrtcSignaling(io) {
           nsp.to(`cam_${cameraId}`).emit("publisher-ready", { cameraId });
 
         } else {
-          // ✅ Track viewer in viewers Map
           if (!viewers.has(cameraId)) viewers.set(cameraId, new Set());
           viewers.get(cameraId).add(socket.id);
 
@@ -81,8 +76,6 @@ function initWebrtcSignaling(io) {
       }
     });
 
-    // ✅ All signaling events use socket's own verified cameraId
-    // ✅ Payload cameraId is ignored — client cannot target other cameras
 
     socket.on("viewer-offer", ({ sdp }) => {
       const cameraId = socket.data.cameraId;
@@ -102,7 +95,6 @@ function initWebrtcSignaling(io) {
       const cameraId = socket.data.cameraId;
       if (!cameraId || !viewerId || !sdp) return;
 
-      // ✅ Verify viewerId is actually in this camera's viewer set
       if (!viewers.get(cameraId)?.has(viewerId)) return;
 
       nsp.to(viewerId).emit("publisher-answer", { cameraId, sdp });
@@ -126,7 +118,6 @@ function initWebrtcSignaling(io) {
       const cameraId = socket.data.cameraId;
       if (!cameraId || !viewerId || !candidate) return;
 
-      // ✅ Verify viewerId is actually in this camera's viewer set
       if (!viewers.get(cameraId)?.has(viewerId)) return;
 
       nsp.to(viewerId).emit("publisher-ice-candidate", { cameraId, candidate });
@@ -138,17 +129,13 @@ function initWebrtcSignaling(io) {
 
       if (cameraId) {
         if (role === "publisher") {
-          // ✅ Only delete if this socket is still the current publisher
-          // Prevents a reconnecting publisher from being wiped by old socket
           if (publishers.get(cameraId) === socket.id) {
             publishers.delete(cameraId);
             nsp.to(`cam_${cameraId}`).emit("publisher-disconnected", { cameraId });
           }
         } else {
-          // ✅ Clean up viewer from tracking Set
           viewers.get(cameraId)?.delete(socket.id);
 
-          // ✅ Delete empty Sets to prevent memory leak
           if (viewers.get(cameraId)?.size === 0) {
             viewers.delete(cameraId);
           }

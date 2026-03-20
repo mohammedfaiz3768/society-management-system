@@ -1,8 +1,6 @@
 const { Pool } = require("pg");
 
-// ✅ No dotenv.config() here — only called once in server.js
 
-// ✅ Fail fast with a clear message if no DB config found
 if (!process.env.DATABASE_URL && !process.env.DB_HOST) {
   console.error("[DB] No database configuration found. Set DATABASE_URL or DB_HOST in .env");
   process.exit(1);
@@ -12,7 +10,7 @@ const pool = new Pool(
   process.env.DATABASE_URL
     ? {
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: true }, // ✅ verify certificate
+      ssl: { rejectUnauthorized: true },
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
@@ -23,7 +21,6 @@ const pool = new Pool(
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      // ✅ rejectUnauthorized: true — verify Neon certificate properly
       ssl: process.env.DB_HOST?.includes("neon.tech")
         ? { rejectUnauthorized: true }
         : false,
@@ -33,7 +30,6 @@ const pool = new Pool(
     }
 );
 
-// ✅ Test connection once at startup — crash fast if DB unreachable
 pool.query("SELECT NOW()")
   .then(() => console.log("[DB] Connected successfully"))
   .catch(err => {
@@ -41,7 +37,6 @@ pool.query("SELECT NOW()")
     process.exit(1);
   });
 
-// ✅ Log unexpected runtime errors — but don't crash
 pool.on("error", (err) => {
   console.error("[DB] Unexpected pool error:", err.message);
 });

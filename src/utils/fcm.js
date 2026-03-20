@@ -1,7 +1,7 @@
 const { admin, isInitialized } = require("../config/firebase");
 const pool = require("../config/db");
 
-const BATCH_SIZE = 500; // Firebase multicast limit per call
+const BATCH_SIZE = 500;
 
 async function sendToUser(userId, title, body, data = {}) {
   if (!isInitialized || !admin) {
@@ -19,7 +19,6 @@ async function sendToUser(userId, title, body, data = {}) {
 
     const token = result.rows[0].fcm_token;
 
-    // ✅ Stringify all data values — FCM requires strings
     const stringifiedData = Object.fromEntries(
       Object.entries({ click_action: "FLUTTER_NOTIFICATION_CLICK", ...data })
         .map(([k, v]) => [k, String(v)])
@@ -35,7 +34,6 @@ async function sendToUser(userId, title, body, data = {}) {
     console.log(`[FCM] Sent to user ${userId}`);
 
   } catch (err) {
-    // ✅ Clean up invalid/expired tokens automatically
     if (
       err.code === "messaging/invalid-registration-token" ||
       err.code === "messaging/registration-token-not-registered"
@@ -51,7 +49,6 @@ async function sendToUser(userId, title, body, data = {}) {
   }
 }
 
-// ✅ societyId is now required — never broadcast across societies
 async function sendToAllResidents(societyId, title, body, data = {}) {
   if (!isInitialized || !admin) {
     console.warn("[FCM] Firebase not initialized — skipping notification");
@@ -64,7 +61,6 @@ async function sendToAllResidents(societyId, title, body, data = {}) {
   }
 
   try {
-    // ✅ Scoped to one society only
     const result = await pool.query(
       `SELECT fcm_token FROM users 
              WHERE role = 'resident'
@@ -76,7 +72,6 @@ async function sendToAllResidents(societyId, title, body, data = {}) {
     const tokens = result.rows.map((r) => r.fcm_token);
     if (tokens.length === 0) return;
 
-    // ✅ Stringify all data values
     const stringifiedData = Object.fromEntries(
       Object.entries(data).map(([k, v]) => [k, String(v)])
     );
@@ -85,11 +80,9 @@ async function sendToAllResidents(societyId, title, body, data = {}) {
     let totalFailed = 0;
     const failedTokens = [];
 
-    // ✅ Batch in groups of 500 — Firebase multicast limit
     for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
       const batch = tokens.slice(i, i + BATCH_SIZE);
 
-      // ✅ sendEachForMulticast — sendMulticast is deprecated
       const response = await admin.messaging().sendEachForMulticast({
         notification: { title, body },
         tokens: batch,
@@ -99,7 +92,6 @@ async function sendToAllResidents(societyId, title, body, data = {}) {
       totalSent += response.successCount;
       totalFailed += response.failureCount;
 
-      // ✅ Collect failed tokens for cleanup
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
           failedTokens.push(batch[idx]);
@@ -107,7 +99,6 @@ async function sendToAllResidents(societyId, title, body, data = {}) {
       });
     }
 
-    // ✅ Remove invalid/expired tokens from DB
     if (failedTokens.length > 0) {
       await pool.query(
         `UPDATE users SET fcm_token = NULL WHERE fcm_token = ANY($1)`,

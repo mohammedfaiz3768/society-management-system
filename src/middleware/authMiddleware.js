@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 module.exports = function (req, res, next) {
   const authHeader = req.headers.authorization;
 
-  // ✅ Only standard Bearer token — no fallback non-standard headers
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Authorization denied. Token missing." });
   }
@@ -17,7 +16,6 @@ module.exports = function (req, res, next) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // ✅ society_id included — societyMiddleware can now read from token, no DB query needed
     req.user = {
       id: decoded.id,
       role: decoded.role,
@@ -28,7 +26,6 @@ module.exports = function (req, res, next) {
     next();
 
   } catch (err) {
-    // ✅ Distinguish expired vs invalid — client knows whether to refresh or re-login
     if (err.name === "TokenExpiredError") {
       return res.status(401).json({ message: "Token expired. Please login again." });
     }

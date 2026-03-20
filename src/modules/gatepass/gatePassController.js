@@ -11,7 +11,6 @@ exports.createGatePass = async (req, res) => {
     return res.status(400).json({ message: "visitor_name is required" });
   }
 
-  // ✅ Validate valid_to — required, must be future, max 30 days
   if (!valid_to) {
     return res.status(400).json({ message: "valid_to is required" });
   }
@@ -25,7 +24,6 @@ exports.createGatePass = async (req, res) => {
   }
 
   try {
-    // Duplicate pass cooldown check
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
     const queryConditions = ["user_id = $1", "society_id = $2", "created_at > $3", "visitor_name = $4"];
     const queryParams = [userId, societyId, twoMinutesAgo, visitor_name];
@@ -52,7 +50,6 @@ exports.createGatePass = async (req, res) => {
       });
     }
 
-    // ✅ Cryptographically random QR code — not brute-forceable
     const qr_code = crypto.randomBytes(32).toString("hex");
     const numPeople = number_of_people && number_of_people > 0 ? number_of_people : 1;
 
@@ -87,7 +84,6 @@ exports.getGatePasses = async (req, res) => {
   const userId = req.user.id;
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 20, 100);
   const offset = (page - 1) * limit;
@@ -114,7 +110,6 @@ exports.getGatePassById = async (req, res) => {
   const role = req.user.role;
 
   try {
-    // ✅ Scoped to society, ownership verified (guards and admins can see all)
     const result = await pool.query(
       `SELECT * FROM gate_passes
              WHERE id = $1 AND society_id = $2
@@ -140,7 +135,6 @@ exports.verifyGatePass = async (req, res) => {
   if (!qrData) return res.status(400).json({ message: "QR Data required" });
 
   try {
-    // ✅ Scoped to society — guard can't scan other societies' passes
     const result = await pool.query(
       `SELECT * FROM gate_passes WHERE qr_code = $1 AND society_id = $2`,
       [qrData, societyId]
@@ -154,7 +148,7 @@ exports.verifyGatePass = async (req, res) => {
     const now = new Date();
 
     if (pass.valid_from && now < new Date(pass.valid_from)) {
-      return res.json({ isValid: false, reason: "Not yet valid" }); // ✅ no pass data on failure
+      return res.json({ isValid: false, reason: "Not yet valid" });
     }
     if (now > new Date(pass.valid_until)) {
       return res.json({ isValid: false, reason: "Expired" });
@@ -163,7 +157,6 @@ exports.verifyGatePass = async (req, res) => {
       return res.json({ isValid: false, reason: "Marked as expired" });
     }
 
-    // ✅ Only return full pass data when valid
     return res.json({ isValid: true, gatePass: pass });
 
   } catch (err) {
@@ -178,7 +171,6 @@ exports.markEntry = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Society scoped, only PENDING passes, only if not expired
     const result = await pool.query(
       `UPDATE gate_passes
              SET status = 'ENTERED', entry_time = NOW(), guard_id = $1, updated_at = NOW()
@@ -191,7 +183,6 @@ exports.markEntry = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      // Check why it failed
       const check = await pool.query(
         `SELECT status, valid_until FROM gate_passes WHERE id = $1 AND society_id = $2`,
         [id, societyId]
@@ -219,7 +210,6 @@ exports.markExit = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Society scoped, only ENTERED passes can exit
     const result = await pool.query(
       `UPDATE gate_passes
              SET status = 'EXITED', exit_time = NOW(), guard_id = $1, updated_at = NOW()
@@ -255,7 +245,6 @@ exports.deleteGatePass = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Society scoped + ownership check
     const result = await pool.query(
       `DELETE FROM gate_passes
              WHERE id = $1 AND user_id = $2 AND society_id = $3

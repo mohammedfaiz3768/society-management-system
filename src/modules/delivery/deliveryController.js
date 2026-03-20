@@ -8,7 +8,6 @@ exports.createDeliveryPass = async (req, res) => {
   const societyId = req.societyId;
   const { company, description, valid_minutes } = req.body;
 
-  // ✅ Validate valid_minutes — min 15, max 24 hours
   const mins = parseInt(valid_minutes) || 120;
   if (mins < 15 || mins > 1440) {
     return res.status(400).json({ message: "valid_minutes must be between 15 and 1440" });
@@ -22,7 +21,6 @@ exports.createDeliveryPass = async (req, res) => {
 
     const flat = userResult.rows[0]?.flat_number;
 
-    // ✅ Reject if user has no flat assigned
     if (!flat) {
       return res.status(400).json({
         message: "You must be assigned to a flat to create a delivery pass"
@@ -88,7 +86,6 @@ exports.deliveryEntry = async (req, res) => {
   const societyId = req.societyId;
   const { delivery_person, company, purpose, flat_number, pass_code } = req.body;
 
-  // ✅ Required field validation
   if (!delivery_person || !flat_number) {
     return res.status(400).json({ message: "delivery_person and flat_number are required" });
   }
@@ -97,7 +94,6 @@ exports.deliveryEntry = async (req, res) => {
     let preapproved = false;
 
     if (pass_code) {
-      // ✅ Society scoped pass code check
       const pass = await pool.query(
         `SELECT * FROM delivery_pass
                  WHERE pass_code=$1 AND used=FALSE AND society_id=$2`,
@@ -115,7 +111,6 @@ exports.deliveryEntry = async (req, res) => {
             [p.id]
           );
 
-          // Notify resident — non-blocking
           sendNotification(
             p.resident_id,
             "Delivery Arrived",
@@ -127,7 +122,6 @@ exports.deliveryEntry = async (req, res) => {
       }
     }
 
-    // ✅ society_id added to INSERT
     const result = await pool.query(
       `INSERT INTO delivery_logs
              (delivery_person, company, purpose, flat_number, guard_id, pass_code, preapproved, society_id)
@@ -160,7 +154,6 @@ exports.deliveryExit = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Society scoped, only if not already exited, existence check
     const result = await pool.query(
       `UPDATE delivery_logs
              SET out_time=NOW()
@@ -201,7 +194,6 @@ exports.getMyDeliveries = async (req, res) => {
   const userId = req.user.id;
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 20, 100);
   const offset = (page - 1) * limit;
@@ -218,7 +210,6 @@ exports.getMyDeliveries = async (req, res) => {
       return res.json([]);
     }
 
-    // ✅ Society scoped
     const logs = await pool.query(
       `SELECT * FROM delivery_logs
              WHERE flat_number=$1 AND society_id=$2
@@ -238,7 +229,6 @@ exports.getMyDeliveries = async (req, res) => {
 exports.getAllDeliveries = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;

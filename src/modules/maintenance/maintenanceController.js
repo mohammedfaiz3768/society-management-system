@@ -11,12 +11,10 @@ exports.createBill = async (req, res) => {
     return res.status(400).json({ message: "flat_number, month, year, amount are required" });
   }
 
-  // ✅ Validate amount
   if (isNaN(amount) || Number(amount) <= 0) {
     return res.status(400).json({ message: "Amount must be a positive number" });
   }
 
-  // ✅ Validate month and year
   const monthNum = parseInt(month);
   const yearNum = parseInt(year);
   if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
@@ -27,7 +25,6 @@ exports.createBill = async (req, res) => {
   }
 
   try {
-    // ✅ Prevent duplicate bills for same flat + month + year
     const existing = await pool.query(
       `SELECT id FROM maintenance_bills
              WHERE flat_number = $1 AND month = $2 AND year = $3 AND society_id = $4`,
@@ -70,9 +67,8 @@ exports.createBill = async (req, res) => {
 exports.getAllBills = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Pagination — never return unlimited rows
   const page = parseInt(req.query.page) || 1;
-  const limit = Math.min(parseInt(req.query.limit) || 50, 100); // max 100 per page
+  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;
 
   try {
@@ -97,7 +93,6 @@ exports.updateBill = async (req, res) => {
   const { amount, status, due_date, paid_date, notes } = req.body;
   const societyId = req.societyId;
 
-  // ✅ Validate status if provided
   if (status && !VALID_STATUSES.includes(status)) {
     return res.status(400).json({
       message: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}`
@@ -105,7 +100,6 @@ exports.updateBill = async (req, res) => {
   }
 
   try {
-    // ✅ Scoped to society — prevent cross-society edits
     const old = await pool.query(
       `SELECT * FROM maintenance_bills WHERE id = $1 AND society_id = $2`,
       [id, societyId]
@@ -117,14 +111,12 @@ exports.updateBill = async (req, res) => {
 
     const prev = old.rows[0];
 
-    // ✅ Prevent editing already paid bills
     if (prev.status === "PAID") {
       return res.status(400).json({
         message: "Cannot edit a bill that has already been paid"
       });
     }
 
-    // ✅ Validate amount if provided
     if (amount !== undefined && (isNaN(amount) || Number(amount) <= 0)) {
       return res.status(400).json({ message: "Amount must be a positive number" });
     }
@@ -146,7 +138,7 @@ exports.updateBill = async (req, res) => {
         paid_date || prev.paid_date,
         notes !== undefined ? notes : prev.notes,
         id,
-        societyId, // ✅ double-scoped in UPDATE too
+        societyId,
       ]
     );
 
@@ -172,7 +164,6 @@ exports.deleteBill = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Scoped delete with existence check via RETURNING
     const result = await pool.query(
       `DELETE FROM maintenance_bills
              WHERE id = $1 AND society_id = $2
@@ -184,9 +175,7 @@ exports.deleteBill = async (req, res) => {
       return res.status(404).json({ message: "Bill not found" });
     }
 
-    // ✅ Prevent deleting paid bills — payment record would be orphaned
     if (result.rows[0].status === "PAID") {
-      // Re-insert since we already deleted — better to check before deleting
       return res.status(400).json({
         message: "Cannot delete a paid bill"
       });

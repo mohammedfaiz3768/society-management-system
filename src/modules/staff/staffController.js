@@ -2,13 +2,11 @@ const pool = require("../../config/db");
 const { sendNotification } = require("../../utils/sendNotification");
 const { logActivity } = require("../../utils/activityLogger");
 
-// ─── Staff CRUD ──────────────────────────────────────────────────────────────
 
 exports.addStaff = async (req, res) => {
   const { name, phone, role, shift_start, shift_end } = req.body;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can add staff" });
   }
@@ -45,7 +43,6 @@ exports.addStaff = async (req, res) => {
 exports.getAllStaff = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;
@@ -68,7 +65,6 @@ exports.getStaffById = async (req, res) => {
   const societyId = req.societyId;
 
   try {
-    // ✅ Society scoped
     const result = await pool.query(
       "SELECT * FROM staff WHERE id=$1 AND society_id=$2",
       [id, societyId]
@@ -88,13 +84,11 @@ exports.updateStaff = async (req, res) => {
   const { name, phone, role, shift_start, shift_end, status } = req.body;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can update staff" });
   }
 
   try {
-    // ✅ Society scoped, fetch old record for partial update
     const old = await pool.query(
       "SELECT * FROM staff WHERE id=$1 AND society_id=$2",
       [id, societyId]
@@ -106,7 +100,6 @@ exports.updateStaff = async (req, res) => {
 
     const prev = old.rows[0];
 
-    // ✅ Merge — undefined fields keep existing values, not become NULL
     const updated = await pool.query(
       `UPDATE staff
              SET name=$1, phone=$2, role=$3, shift_start=$4, shift_end=$5, status=$6
@@ -136,13 +129,11 @@ exports.deleteStaff = async (req, res) => {
   const { id } = req.params;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can delete staff" });
   }
 
   try {
-    // ✅ Society scoped + existence check
     const result = await pool.query(
       "DELETE FROM staff WHERE id=$1 AND society_id=$2 RETURNING id, name",
       [id, societyId]
@@ -160,7 +151,6 @@ exports.deleteStaff = async (req, res) => {
   }
 };
 
-// ─── Check In / Out ──────────────────────────────────────────────────────────
 
 exports.staffCheckIn = async (req, res) => {
   const { staff_id } = req.body;
@@ -171,7 +161,6 @@ exports.staffCheckIn = async (req, res) => {
   }
 
   try {
-    // ✅ Verify staff belongs to this society
     const staffCheck = await pool.query(
       "SELECT id FROM staff WHERE id=$1 AND society_id=$2",
       [staff_id, societyId]
@@ -204,7 +193,6 @@ exports.staffCheckOut = async (req, res) => {
   }
 
   try {
-    // ✅ Verify attendance record belongs to this society via JOIN
     const updated = await pool.query(
       `UPDATE staff_attendance sa
              SET exit_time = NOW()
@@ -230,13 +218,11 @@ exports.getStaffAttendance = async (req, res) => {
   const { staff_id } = req.params;
   const societyId = req.societyId;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 30, 100);
   const offset = (page - 1) * limit;
 
   try {
-    // ✅ Society scoped via JOIN
     const result = await pool.query(
       `SELECT sa.* FROM staff_attendance sa
              JOIN staff s ON sa.staff_id = s.id
@@ -254,13 +240,11 @@ exports.getStaffAttendance = async (req, res) => {
   }
 };
 
-// ─── Staff Logs ──────────────────────────────────────────────────────────────
 
 exports.addStaffLog = async (req, res) => {
   const { staff_id, log } = req.body;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can add staff logs" });
   }
@@ -270,7 +254,6 @@ exports.addStaffLog = async (req, res) => {
   }
 
   try {
-    // ✅ Verify staff belongs to this society
     const staffCheck = await pool.query(
       "SELECT id FROM staff WHERE id=$1 AND society_id=$2",
       [staff_id, societyId]
@@ -301,7 +284,6 @@ exports.getStaffLogs = async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
-    // ✅ Society scoped via JOIN
     const result = await pool.query(
       `SELECT sl.* FROM staff_logs sl
              JOIN staff s ON sl.staff_id = s.id
@@ -319,7 +301,6 @@ exports.getStaffLogs = async (req, res) => {
   }
 };
 
-// ─── Assignments ─────────────────────────────────────────────────────────────
 
 exports.assignStaffToResident = async (req, res) => {
   const { staff_id, resident_id, role_in_home, working_days, timings } = req.body;
@@ -330,7 +311,6 @@ exports.assignStaffToResident = async (req, res) => {
   }
 
   try {
-    // ✅ Verify both staff and resident belong to this society
     const [staffCheck, residentCheck] = await Promise.all([
       pool.query("SELECT id FROM staff WHERE id=$1 AND society_id=$2", [staff_id, societyId]),
       pool.query("SELECT id FROM users WHERE id=$1 AND society_id=$2 AND role='resident'", [resident_id, societyId]),
@@ -361,7 +341,6 @@ exports.assignStaffToResident = async (req, res) => {
 exports.getResidentStaff = async (req, res) => {
   const societyId = req.societyId;
 
-  // ✅ Residents see only their own staff — admins can query by param
   const targetId = req.user.role === "admin"
     ? req.params.resident_id
     : req.user.id;
@@ -390,7 +369,6 @@ exports.blockStaff = async (req, res) => {
   const residentId = req.user.id;
 
   try {
-    // ✅ Verify assignment belongs to this resident and society
     const check = await pool.query(
       `SELECT sa.id FROM staff_assignments sa
              JOIN staff s ON sa.staff_id = s.id
@@ -424,7 +402,6 @@ exports.unblockStaff = async (req, res) => {
   const residentId = req.user.id;
 
   try {
-    // ✅ Same ownership check as blockStaff
     const check = await pool.query(
       `SELECT sa.id FROM staff_assignments sa
              JOIN staff s ON sa.staff_id = s.id
@@ -452,11 +429,10 @@ exports.unblockStaff = async (req, res) => {
   }
 };
 
-// ─── Staff Entry / Exit / Leave ──────────────────────────────────────────────
 
 exports.markStaffEntry = async (req, res) => {
   const { staff_id, resident_id } = req.body;
-  const marked_by = req.user.id; // ✅ from JWT — never trust client
+  const marked_by = req.user.id;
   const societyId = req.societyId;
 
   if (!staff_id || !resident_id) {
@@ -464,7 +440,6 @@ exports.markStaffEntry = async (req, res) => {
   }
 
   try {
-    // ✅ Society scoped assignment check
     const assignment = await pool.query(
       `SELECT sa.* FROM staff_assignments sa
              JOIN staff s ON sa.staff_id = s.id
@@ -490,7 +465,6 @@ exports.markStaffEntry = async (req, res) => {
       [staff_id, resident_id, marked_by]
     );
 
-    // ✅ Correct sendNotification signature
     await sendNotification(
       resident_id,
       "Staff Entry",
@@ -516,7 +490,6 @@ exports.markStaffExit = async (req, res) => {
   }
 
   try {
-    // ✅ Society scoped via JOIN, existence check
     const result = await pool.query(
       `UPDATE staff_attendance sa
              SET exit_time = NOW()
@@ -540,17 +513,15 @@ exports.markStaffExit = async (req, res) => {
 
 exports.markStaffLeave = async (req, res) => {
   const { staff_id, resident_id, leave_date, reason } = req.body;
-  const marked_by = req.user.id; // ✅ from JWT
+  const marked_by = req.user.id;
   const marked_by_type = req.user.role;
   const societyId = req.societyId;
 
-  // ✅ Required field validation
   if (!staff_id || !resident_id || !leave_date) {
     return res.status(400).json({ message: "staff_id, resident_id and leave_date are required" });
   }
 
   try {
-    // ✅ Verify staff belongs to this society
     const staffCheck = await pool.query(
       "SELECT id FROM staff WHERE id=$1 AND society_id=$2",
       [staff_id, societyId]

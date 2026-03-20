@@ -9,7 +9,6 @@ exports.createNotice = async (req, res) => {
   const createdBy = req.user.id;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can create notices" });
   }
@@ -18,7 +17,6 @@ exports.createNotice = async (req, res) => {
     return res.status(400).json({ message: "Title and content are required" });
   }
 
-  // ✅ Length validation
   if (title.length > 150) {
     return res.status(400).json({ message: "Title must be under 150 characters" });
   }
@@ -26,14 +24,12 @@ exports.createNotice = async (req, res) => {
     return res.status(400).json({ message: "Content must be under 3000 characters" });
   }
 
-  // ✅ Audience validation
   if (audience && !VALID_AUDIENCES.includes(audience)) {
     return res.status(400).json({
       message: `Invalid audience. Must be one of: ${VALID_AUDIENCES.join(", ")}`
     });
   }
 
-  // ✅ Category validation
   if (category && !VALID_CATEGORIES.includes(category)) {
     return res.status(400).json({
       message: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(", ")}`
@@ -71,13 +67,11 @@ exports.getAllNotices = async (req, res) => {
   const societyId = req.societyId;
   const role = req.user.role;
 
-  // ✅ Pagination
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 20, 100);
   const offset = (page - 1) * limit;
 
   try {
-    // ✅ Admins see all notices — others only see notices for their role or "all"
     const result = await pool.query(
       `SELECT n.*, u.name AS created_by_name
              FROM notices n
@@ -103,7 +97,6 @@ exports.getNoticeById = async (req, res) => {
   const role = req.user.role;
 
   try {
-    // ✅ Scoped to society + audience filter
     const result = await pool.query(
       `SELECT n.*, u.name AS created_by_name
              FROM notices n
@@ -128,15 +121,13 @@ exports.getNoticeById = async (req, res) => {
 
 exports.updateNotice = async (req, res) => {
   const { id } = req.params;
-  const { title, content, pinned, audience } = req.body; // ✅ 'content' not 'body'
+  const { title, content, pinned, audience } = req.body;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can update notices" });
   }
 
-  // ✅ Audience validation if provided
   if (audience && !VALID_AUDIENCES.includes(audience)) {
     return res.status(400).json({
       message: `Invalid audience. Must be one of: ${VALID_AUDIENCES.join(", ")}`
@@ -144,7 +135,6 @@ exports.updateNotice = async (req, res) => {
   }
 
   try {
-    // ✅ Society scoped SELECT
     const old = await pool.query(
       "SELECT * FROM notices WHERE id = $1 AND society_id = $2",
       [id, societyId]
@@ -154,7 +144,6 @@ exports.updateNotice = async (req, res) => {
       return res.status(404).json({ message: "Not found" });
     }
 
-    // ✅ Society scoped UPDATE, consistent 'content' column name
     const updated = await pool.query(
       `UPDATE notices
              SET title    = $1,
@@ -195,13 +184,11 @@ exports.deleteNotice = async (req, res) => {
   const { id } = req.params;
   const societyId = req.societyId;
 
-  // ✅ Admin only
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can delete notices" });
   }
 
   try {
-    // ✅ Society scoped + existence check via RETURNING
     const result = await pool.query(
       "DELETE FROM notices WHERE id = $1 AND society_id = $2 RETURNING id",
       [id, societyId]
