@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        const isPublicRoute = PUBLIC_ROUTES.some(r => pathname.startsWith(r));
+        const isPublicRoute = pathname === '/' || PUBLIC_ROUTES.some(r => pathname.startsWith(r));
 
         // ✅ All public routes excluded from redirect
         if (!isLoading && !token && !isPublicRoute) {
