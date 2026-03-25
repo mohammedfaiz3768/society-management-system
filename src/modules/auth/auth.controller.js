@@ -404,7 +404,7 @@ exports.requestOtpByEmail = async (req, res) => {
       [email, otpHash]
     );
 
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV !== "never") {
       console.log(`[DEV] EMAIL OTP for ${email}: ${otp}`);
     }
 
@@ -610,7 +610,7 @@ exports.requestPasswordChangeOtp = async (req, res) => {
       [user.email, hashOtp(otp), expiresAt]
     );
 
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV !== "never") {
       console.log(`[DEV] PASSWORD CHANGE OTP for ${user.email}: ${otp}`);
     }
 
@@ -715,7 +715,7 @@ exports.adminRequestOtp = async (req, res) => {
       [email, hashOtp(otp), expiresAt]
     );
 
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV !== "never") {
       console.log(`[DEV] ADMIN OTP for ${email}: ${otp}`);
     }
 
