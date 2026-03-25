@@ -9,6 +9,10 @@ interface User {
     name: string;
     email: string;
     role: string;
+    society_id: string | null;
+    is_first_login?: boolean;
+    flat_number?: string | null;
+    block?: string | null;
 }
 
 interface AuthContextType {
@@ -18,6 +22,8 @@ interface AuthContextType {
     logout: () => void;
     isLoading: boolean;
 }
+
+const PUBLIC_ROUTES = ['/login', '/register', '/verify-email', '/setup-society'];
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -29,26 +35,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     useEffect(() => {
-        const savedToken = localStorage.getItem('admin_token');
-        const savedUser = localStorage.getItem('admin_user');
+        const init = async () => {
+            const savedToken = localStorage.getItem('admin_token');
 
-        if (savedToken && savedUser) {
-            setToken(savedToken);
-            setUser(JSON.parse(savedUser));
-        }
+            if (savedToken) {
+                try {
+                    // ✅ Verify token against server — get fresh user data
+                    const res = await api.get('/auth/me');
+                    setToken(savedToken);
+                    setUser(res.data);
+                } catch {
+                    // ✅ Token expired or invalid — clear everything
+                    localStorage.removeItem('admin_token');
+                    localStorage.removeItem('admin_user');
+                }
+            }
 
-        setIsLoading(false);
+            setIsLoading(false);
+        };
+
+        init();
     }, []);
 
     useEffect(() => {
-        if (!isLoading && !token && pathname !== '/login') {
+        const isPublicRoute = PUBLIC_ROUTES.some(r => pathname.startsWith(r));
+
+        // ✅ All public routes excluded from redirect
+        if (!isLoading && !token && !isPublicRoute) {
             router.push('/login');
         }
     }, [isLoading, token, pathname, router]);
 
     const login = (newToken: string, newUser: User) => {
+        // ✅ Only store token — never store user data in localStorage
         localStorage.setItem('admin_token', newToken);
-        localStorage.setItem('admin_user', JSON.stringify(newUser));
         setToken(newToken);
         setUser(newUser);
         router.push('/dashboard');
@@ -56,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = () => {
         localStorage.removeItem('admin_token');
-        localStorage.removeItem('admin_user');
+        localStorage.removeItem('admin_user'); // clean up old stored user if exists
         setToken(null);
         setUser(null);
         router.push('/login');

@@ -1,15 +1,19 @@
 import axios from 'axios';
 
-let API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+// ✅ Clean URL — just strip trailing slash, trust the env var
+// NEXT_PUBLIC_API_BASE_URL should be set to your full API base e.g. https://api.unify.com/api
+const API_URL = (
+    process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:10000/api' // ✅ correct port
+).replace(/\/$/, '');
 
-API_URL = API_URL.replace(/\/$/, "");
-
-if (!API_URL.endsWith('/api')) {
-    API_URL += '/api';
+// ✅ Log active URL in development
+if (process.env.NODE_ENV === 'development') {
+    console.log('[api] Base URL:', API_URL);
 }
 
 const api = axios.create({
     baseURL: API_URL,
+    timeout: 15000, // ✅ 15s timeout — prevents infinite hangs
     headers: {
         'Content-Type': 'application/json',
     },
@@ -17,9 +21,12 @@ const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('admin_token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        // ✅ SSR guard — localStorage doesn't exist on server
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('admin_token');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
         }
         return config;
     },
