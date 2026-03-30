@@ -1,208 +1,239 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import api from "@/lib/api";
 import { Search } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface GatePass {
     id: number;
     visitor_name: string;
     visitor_phone: string;
-    user_id: number;
-    username: string;
     flat_number: string;
     block: string;
     vehicle_number: string | null;
     valid_until: string;
-    used: boolean;
+    status: string;
     number_of_people?: number;
     created_at: string;
+    purpose?: string;
 }
+
+type FilterType = "all" | "used" | "unused";
+
+function getPassStatus(pass: GatePass) {
+    if (pass.status === 'EXITED' || pass.status === 'USED') return 'used';
+    if (pass.status === 'EXPIRED' || new Date(pass.valid_until) < new Date()) return 'expired';
+    return 'active';
+}
+
+const STATUS_STYLES: Record<string, string> = {
+    active: 'bg-green-100 text-green-800',
+    expired: 'bg-red-100 text-red-800',
+    used: 'bg-blue-100 text-blue-800',
+};
 
 export default function GatePage() {
     const [gatePasses, setGatePasses] = useState<GatePass[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
-    const [filterUsed, setFilterUsed] = useState<"all" | "used" | "unused">("all");
-
-    useEffect(() => {
-        fetchGatePasses();
-    }, [filterUsed]);
+    const [filterUsed, setFilterUsed] = useState<FilterType>("all");
 
     const fetchGatePasses = async () => {
         setLoading(true);
+        setError("");
         try {
-            const params = new URLSearchParams({
-                page: "1",
-                limit: "100",
-                search: searchTerm,
+            // ✅ Correct endpoint matching backend routes
+            const res = await api.get('/gate-pass', {
+                params: { page: 1, limit: 50 }
             });
-
-            if (filterUsed !== "all") {
-                params.append("used", filterUsed === "used" ? "true" : "false");
-            }
-
-            const token = localStorage.getItem("token");
-            const response = await fetch(`/api/gate-pass/admin/all?${params}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (!response.ok) throw new Error("Failed to fetch gate passes");
-
-            const data = await response.json();
-            setGatePasses(data.gatePasses || []);
-        } catch (error) {
-            console.error("Error fetching gate passes:", error);
+            // ✅ Backend returns plain array
+            setGatePasses(Array.isArray(res.data) ? res.data : []);
+        } catch {
+            setError("Failed to fetch gate passes");
             setGatePasses([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const activeCount = gatePasses.filter(p => !p.used && new Date(p.valid_until) > new Date()).length;
+    useEffect(() => { fetchGatePasses(); }, []);
+
+    // ✅ Client-side filtering — search + status filter
+    const filtered = gatePasses.filter(pass => {
+        const status = getPassStatus(pass);
+        const matchesFilter =
+            filterUsed === "all" ||
+            (filterUsed === "unused" && status === "active") ||
+            (filterUsed === "used" && status === "used");
+
+        const matchesSearch = !searchTerm ||
+            pass.visitor_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            pass.visitor_phone?.includes(searchTerm) ||
+            pass.flat_number?.includes(searchTerm);
+
+        return matchesFilter && matchesSearch;
+    });
+
+    // ✅ Derived stats
+    const activeCount = gatePasses.filter(p => getPassStatus(p) === 'active').length;
     const todayCount = gatePasses.filter(p => {
-        const created = new Date(p.created_at);
-        const today = new Date();
-        return created.toDateString() === today.toDateString();
+        return new Date(p.created_at).toDateString() === new Date().toDateString();
     }).length;
 
     return (
-        <div className="max-w-6xl">
-            <h1 className="text-2xl font-bold text-slate-900 mb-6">Gate & Visitors</h1>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="text-sm text-slate-500 mb-1">Active Visitors</div>
-                    <div className="text-3xl font-bold text-slate-900">{activeCount}</div>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="text-sm text-slate-500 mb-1">Today's Visitors</div>
-                    <div className="text-3xl font-bold text-slate-900">{todayCount}</div>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <div className="text-sm text-slate-500 mb-1">Total Gate Passes</div>
-                    <div className="text-3xl font-bold text-orange-500">{gatePasses.length}</div>
-                </div>
+        <div className="space-y-6">
+            <div>
+                <h2 className="text-2xl font-semibold tracking-tight">Gate & Visitors</h2>
+                <p className="text-sm text-muted-foreground">Monitor all gate passes and visitor activity.</p>
             </div>
 
-            {/* Search and Filters */}
-            <div className="bg-white rounded-lg shadow p-4 mb-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search by visitor name or phone..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && fetchGatePasses()}
-                            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setFilterUsed("all")}
-                            className={`px-4 py-2 rounded-lg font-medium ${filterUsed === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"
-                                }`}
-                        >
-                            All
-                        </button>
-                        <button
-                            onClick={() => setFilterUsed("unused")}
-                            className={`px-4 py-2 rounded-lg font-medium ${filterUsed === "unused" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700"
-                                }`}
-                        >
-                            Active
-                        </button>
-                        <button
-                            onClick={() => setFilterUsed("used")}
-                            className={`px-4 py-2 rounded-lg font-medium ${filterUsed === "used" ? "bg-gray-600 text-white" : "bg-gray-100 text-gray-700"
-                                }`}
-                        >
-                            Used
-                        </button>
-                    </div>
-                    <button
-                        onClick={fetchGatePasses}
-                        className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium"
-                    >
-                        Search
-                    </button>
-                </div>
+            {error && (
+                <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+
+            {/* ✅ Stats using Card components */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            Active Passes
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-600">{activeCount}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            Today&apos;s Visitors
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{todayCount}</div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            Total Passes
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-orange-500">{gatePasses.length}</div>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Gate Passes Table */}
-            <div className="bg-white rounded-lg shadow">
-                <h2 className="text-lg font-semibold p-6 border-b">All Gate Passes</h2>
-                <div className="overflow-x-auto">
-                    {loading ? (
-                        <div className="flex justify-center items-center py-12">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                        </div>
-                    ) : gatePasses.length === 0 ? (
-                        <div className="text-slate-500 text-center py-12">
-                            No gate passes found
-                        </div>
-                    ) : (
-                        <table className="w-full">
-                            <thead className="bg-gray-50 border-b">
-                                <tr>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Visitor</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Resident/Flat</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Vehicle</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">People</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Valid Until</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-700">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {gatePasses.map((pass) => (
-                                    <tr key={pass.id} className="hover:bg-gray-50">
-                                        <td className="py-3 px-4">
-                                            <div className="font-medium text-gray-900">{pass.visitor_name}</div>
-                                            <div className="text-sm text-gray-500">{pass.visitor_phone}</div>
-                                        </td>
-                                        <td className="py-3 px-4 text-sm">
-                                            <div className="text-gray-900">{pass.username}</div>
-                                            <div className="text-gray-500">
-                                                {pass.block && pass.flat_number ? `${pass.block}-${pass.flat_number}` : "N/A"}
-                                            </div>
-                                        </td>
-                                        <td className="py-3 px-4 text-sm text-gray-900">
-                                            {pass.vehicle_number || "-"}
-                                        </td>
-                                        <td className="py-3 px-4">
-                                            {pass.number_of_people && pass.number_of_people > 1 ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                                    {pass.number_of_people}
-                                                </span>
-                                            ) : (
-                                                <span className="text-sm text-gray-500">1</span>
-                                            )}
-                                        </td>
-                                        <td className="py-3 px-4 text-sm text-gray-900">
-                                            {new Date(pass.valid_until).toLocaleDateString()}
-                                        </td>
-                                        <td className="py-3 px-4">
-                                            {pass.used ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    Used
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    Active
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+            {/* ✅ Search + filters using shadcn components */}
+            <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search visitor, phone, flat..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-8"
+                    />
                 </div>
+                <div className="flex gap-2">
+                    {(["all", "unused", "used"] as FilterType[]).map((f) => (
+                        <Button
+                            key={f}
+                            size="sm"
+                            variant={filterUsed === f ? "default" : "outline"}
+                            onClick={() => setFilterUsed(f)}
+                        >
+                            {f === "all" ? "All" : f === "unused" ? "Active" : "Used"}
+                        </Button>
+                    ))}
+                </div>
+                <Button size="sm" variant="outline" onClick={fetchGatePasses}>
+                    Refresh
+                </Button>
             </div>
+
+            {/* Table */}
+            <div className="rounded-md border bg-white">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Visitor</TableHead>
+                            <TableHead>Flat</TableHead>
+                            <TableHead>Vehicle</TableHead>
+                            <TableHead>People</TableHead>
+                            <TableHead>Valid Until</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">
+                                    <div className="flex justify-center">
+                                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : filtered.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
+                                    {searchTerm || filterUsed !== "all" ? "No passes match your filters." : "No gate passes found."}
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filtered.map((pass) => {
+                                const status = getPassStatus(pass);
+                                return (
+                                    <TableRow key={pass.id}>
+                                        <TableCell>
+                                            <div className="font-medium text-sm">{pass.visitor_name}</div>
+                                            <div className="text-xs text-muted-foreground">{pass.visitor_phone}</div>
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                            {pass.block && pass.flat_number
+                                                ? `${pass.block}-${pass.flat_number}`
+                                                : pass.flat_number || '—'}
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                            {pass.vehicle_number || '—'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <span className="text-sm">
+                                                {pass.number_of_people || 1}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-xs text-muted-foreground">
+                                            {/* ✅ Show date AND time — time matters for gate passes */}
+                                            {new Date(pass.valid_until).toLocaleString()}
+                                        </TableCell>
+                                        <TableCell>
+                                            {/* ✅ Three status states: active, expired, used */}
+                                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_STYLES[status]}`}>
+                                                {status}
+                                            </span>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+
+            {!loading && (
+                <p className="text-xs text-muted-foreground">
+                    Showing {filtered.length} of {gatePasses.length} passes
+                </p>
+            )}
         </div>
     );
 }

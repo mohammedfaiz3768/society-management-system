@@ -48,9 +48,9 @@ export default function Home() {
         {/* Stats */}
         <div className="grid grid-cols-4 divide-x divide-zinc-100 dark:divide-zinc-800 border border-zinc-100 dark:border-zinc-800 rounded-xl overflow-hidden max-w-2xl mx-auto">
           {[
-            { n: "23", l: "API Modules" },
+            { n: "23", l: "Services" },
             { n: "4", l: "User Roles" },
-            { n: "3", l: "Platform Apps" },
+            { n: "2", l: "Platform Apps" },
             { n: "30d", l: "Free Trial" },
           ].map(({ n, l }) => (
             <div key={l} className="bg-zinc-50 dark:bg-zinc-900 py-5 text-center">

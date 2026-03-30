@@ -1,16 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { buildApiUrl } from "@/lib/apiUtils";
+import axios from "axios";
+import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+interface Flat {
+    id: number;
+    flat_number: string;
+    block: string;
+    floor: string;
+    owner_name: string | null;
+    owner_phone: string | null;
+}
 
 export default function FlatsPage() {
-    const [flats, setFlats] = useState([]);
+    const [flats, setFlats] = useState<Flat[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState("");
     const [formData, setFormData] = useState({
         flat_number: "",
         block: "",
@@ -23,16 +37,10 @@ export default function FlatsPage() {
 
     const fetchFlats = async () => {
         try {
-            const token = localStorage.getItem("token");
-            const res = await fetch(buildApiUrl("flats/all"), {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setFlats(data);
-            }
-        } catch (error) {
-            console.error("Error:", error);
+            const res = await api.get('/flats/all');
+            setFlats(res.data);
+        } catch {
+            setError("Failed to load flats");
         } finally {
             setLoading(false);
         }
@@ -40,23 +48,28 @@ export default function FlatsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError("");
+
+        // ✅ Client-side validation
+        if (!formData.flat_number.trim()) {
+            setError("Flat number is required");
+            return;
+        }
+
+        setIsSubmitting(true);
         try {
-            const token = localStorage.getItem("token");
-            const res = await fetch(buildApiUrl("flats/create"), {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
-            if (res.ok) {
-                setShowForm(false);
-                setFormData({ flat_number: "", block: "", floor: "" });
-                fetchFlats();
+            await api.post('/flats/create', formData);
+            setShowForm(false);
+            setFormData({ flat_number: "", block: "", floor: "" });
+            fetchFlats();
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || "Failed to add flat");
+            } else {
+                setError("An unexpected error occurred");
             }
-        } catch (error) {
-            console.error("Error:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -74,6 +87,13 @@ export default function FlatsPage() {
                 </Button>
             </div>
 
+            {/* ✅ Error display */}
+            {error && (
+                <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+
             {showForm && (
                 <Card>
                     <CardHeader>
@@ -82,41 +102,50 @@ export default function FlatsPage() {
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium">Flat Number *</label>
+                                <div className="space-y-2">
+                                    <Label htmlFor="flat-number">Flat Number *</Label>
                                     <Input
+                                        id="flat-number"
                                         value={formData.flat_number}
                                         onChange={(e) => setFormData({ ...formData, flat_number: e.target.value })}
                                         placeholder="101"
+                                        maxLength={20}
                                         required
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-sm font-medium">Block</label>
+                                <div className="space-y-2">
+                                    <Label htmlFor="flat-block">Block</Label>
                                     <Input
+                                        id="flat-block"
                                         value={formData.block}
                                         onChange={(e) => setFormData({ ...formData, block: e.target.value })}
                                         placeholder="A"
+                                        maxLength={10}
                                     />
                                 </div>
-                                <div>
-                                    <label className="text-sm font-medium">Floor</label>
+                                <div className="space-y-2">
+                                    <Label htmlFor="flat-floor">Floor</Label>
                                     <Input
+                                        id="flat-floor"
                                         value={formData.floor}
                                         onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
                                         placeholder="1"
                                         type="number"
+                                        min={0}
+                                        max={200}
                                     />
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full">Add Flat</Button>
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                {isSubmitting ? "Adding..." : "Add Flat"}
+                            </Button>
                         </form>
                     </CardContent>
                 </Card>
             )}
 
             <div className="grid gap-4 md:grid-cols-3">
-                {flats.map((flat: any) => (
+                {flats.map((flat) => (
                     <Card key={flat.id}>
                         <CardHeader>
                             <div className="flex justify-between items-start">
@@ -151,7 +180,7 @@ export default function FlatsPage() {
                 {flats.length === 0 && (
                     <Card className="col-span-3">
                         <CardContent className="p-12 text-center text-muted-foreground">
-                            No flats added yet. Click "+ Add Flat" to get started.
+                            No flats added yet. Click &quot;+ Add Flat&quot; to get started.
                         </CardContent>
                     </Card>
                 )}

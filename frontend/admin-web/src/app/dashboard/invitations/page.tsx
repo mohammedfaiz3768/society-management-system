@@ -1,17 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { buildApiUrl } from "@/lib/apiUtils";
+import axios from "axios";
+import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface Invitation {
+    id: number;
+    email: string;
+    role: string;
+    code: string;
+    used: boolean;
+    used_by_name: string | null;
+    created_by_name: string | null;
+    created_at: string;
+    expires_at: string | null;
+}
 
 export default function InvitationsPage() {
-    const [invitations, setInvitations] = useState([]);
+    const [invitations, setInvitations] = useState<Invitation[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState("");
     const [formData, setFormData] = useState({
         email: "",
         role: "resident",
@@ -23,16 +42,10 @@ export default function InvitationsPage() {
 
     const fetchInvitations = async () => {
         try {
-            const token = localStorage.getItem("token");
-            const res = await fetch(buildApiUrl("invitations/list"), {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setInvitations(data);
-            }
-        } catch (error) {
-            console.error("Error:", error);
+            const res = await api.get('/invitations/list');
+            setInvitations(res.data);
+        } catch {
+            setError("Failed to load invitations");
         } finally {
             setLoading(false);
         }
@@ -40,38 +53,42 @@ export default function InvitationsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError("");
+
+        // ✅ Client-side validation
+        if (!emailRegex.test(formData.email)) {
+            setError("Please enter a valid email address");
+            return;
+        }
+
+        setIsSubmitting(true);
         try {
-            const token = localStorage.getItem("token");
-            const res = await fetch(buildApiUrl("invitations/send"), {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            });
-            if (res.ok) {
-                setShowForm(false);
-                setFormData({ email: "", role: "resident" });
-                fetchInvitations();
-                alert("Invitation sent successfully!");
+            await api.post('/invitations/send', formData);
+            setShowForm(false);
+            setFormData({ email: "", role: "resident" });
+            fetchInvitations();
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || "Failed to send invitation");
+            } else {
+                setError("An unexpected error occurred");
             }
-        } catch (error) {
-            console.error("Error:", error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const revokeInvitation = async (id: number) => {
         if (!confirm("Revoke this invitation?")) return;
         try {
-            const token = localStorage.getItem("token");
-            await fetch(buildApiUrl(`invitations/revoke/${id}`), {
-                method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.post(`/invitations/revoke/${id}`);
             fetchInvitations();
-        } catch (error) {
-            console.error("Error:", error);
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || "Failed to revoke invitation");
+            } else {
+                setError("An unexpected error occurred");
+            }
         }
     };
 
@@ -89,6 +106,13 @@ export default function InvitationsPage() {
                 </Button>
             </div>
 
+            {/* ✅ Error display */}
+            {error && (
+                <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+
             {showForm && (
                 <Card>
                     <CardHeader>
@@ -96,9 +120,10 @@ export default function InvitationsPage() {
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="text-sm font-medium">Email Address *</label>
+                            <div className="space-y-2">
+                                <Label htmlFor="inv-email">Email Address *</Label>
                                 <Input
+                                    id="inv-email"
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -106,27 +131,30 @@ export default function InvitationsPage() {
                                     required
                                 />
                             </div>
-                            <div>
-                                <label className="text-sm font-medium">Role *</label>
+                            <div className="space-y-2">
+                                <Label htmlFor="inv-role">Role *</Label>
                                 <Select value={formData.role} onValueChange={(val) => setFormData({ ...formData, role: val })}>
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        {/* ✅ Admin removed — use proper admin creation flow */}
                                         <SelectItem value="resident">Resident</SelectItem>
                                         <SelectItem value="guard">Guard</SelectItem>
                                         <SelectItem value="staff">Staff</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button type="submit" className="w-full">Send Invitation</Button>
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                {isSubmitting ? "Sending..." : "Send Invitation"}
+                            </Button>
                         </form>
                     </CardContent>
                 </Card>
             )}
 
             <div className="grid gap-4">
-                {invitations.map((inv: any) => (
+                {invitations.map((inv) => (
                     <Card key={inv.id}>
                         <CardHeader>
                             <div className="flex justify-between items-start">
@@ -171,7 +199,7 @@ export default function InvitationsPage() {
                 {invitations.length === 0 && (
                     <Card>
                         <CardContent className="p-12 text-center text-muted-foreground">
-                            No invitations sent yet. Click "+ Send Invitation" to invite new members.
+                            No invitations sent yet. Click &quot;+ Send Invitation&quot; to invite new members.
                         </CardContent>
                     </Card>
                 )}

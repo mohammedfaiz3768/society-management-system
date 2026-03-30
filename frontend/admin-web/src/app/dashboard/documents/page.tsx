@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import axios from "axios";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,8 +89,12 @@ export default function DocumentsPage() {
             setSelectedFile(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
             fetchDocs();
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Failed to upload document");
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || "Failed to upload document");
+            } else {
+                setError("An unexpected error occurred");
+            }
         } finally {
             setIsSubmitting(false);
         }

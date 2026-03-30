@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import axios from "axios";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,8 +95,12 @@ export default function NoticesPage() {
             });
             setIsDialogOpen(false);
             fetchNotices();
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Failed to create notice");
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || "Failed to create notice");
+            } else {
+                setError("An unexpected error occurred");
+            }
         } finally {
             setIsSubmitting(false);
         }

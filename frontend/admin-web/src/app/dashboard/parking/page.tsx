@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import axios from "axios";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,8 +77,12 @@ export default function ParkingPage() {
             setIsDialogOpen(false);
             setNewSlot({ slot_number: "", type: "resident" });
             fetchData();
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Failed to create slot");
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || "Failed to create slot");
+            } else {
+                setError("An unexpected error occurred");
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -97,8 +102,12 @@ export default function ParkingPage() {
             setSelectedSlot(null);
             setAssignData({ user_id: "" });
             fetchData();
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Failed to assign slot");
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || "Failed to assign slot");
+            } else {
+                setError("An unexpected error occurred");
+            }
         } finally {
             setIsSubmitting(false);
         }

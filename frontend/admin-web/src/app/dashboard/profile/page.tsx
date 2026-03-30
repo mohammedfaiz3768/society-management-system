@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import api from '@/lib/api';
 
 export default function ProfilePage() {
@@ -65,8 +66,12 @@ export default function ProfilePage() {
             });
             setOtpSent(true);
             setSuccess(response.data.message || 'OTP sent to your email');
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to send OTP');
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || 'Failed to send OTP');
+            } else {
+                setError('An unexpected error occurred');
+            }
         } finally {
             setIsRequestingOtp(false);
         }
@@ -96,8 +101,12 @@ export default function ProfilePage() {
             setConfirmPassword('');
             setOtp('');
             setOtpSent(false);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to update password');
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || 'Failed to update password');
+            } else {
+                setError('An unexpected error occurred');
+            }
         } finally {
             setIsChangingPassword(false);
         }
