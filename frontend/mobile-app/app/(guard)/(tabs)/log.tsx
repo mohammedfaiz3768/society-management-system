@@ -7,25 +7,28 @@ import { getGatePasses } from '../../../src/api/gatepass/gatepass.api';
 export default function GuardLogScreen() {
     const { data: passes, isLoading, refetch } = useQuery({
         queryKey: ['gate-passes', 'history'],
-        queryFn: () => getGatePasses(), // In a real app, filtering by date/status would improve performance
+        queryFn: () => getGatePasses(),
     });
 
-    // Filter for completed/entered passes
-    const history = passes?.filter(p => ['ENTERED', 'EXITED'].includes(p.status)) || [];
+    // Show passes that have had activity (entered or exited)
+    const history = passes?.filter(p => p.status === 'ENTERED' || p.status === 'EXITED') ?? [];
 
     const renderItem = ({ item }: { item: any }) => (
         <View className="bg-white p-4 rounded-xl mb-3 border border-gray-100 shadow-sm">
             <View className="flex-row justify-between mb-1">
-                <Text className="font-bold text-gray-900 text-base">{item.guest_name}</Text>
-                <View className={`px-2 py-1 rounded ${item.status === 'ENTERED' ? 'bg-blue-100' : 'bg-gray-100'
-                    }`}>
-                    <Text className={`text-xs font-bold uppercase ${item.status === 'ENTERED' ? 'text-blue-700' : 'text-gray-600'
-                        }`}>
+                <Text className="font-bold text-gray-900 text-base">{item.visitor_name}</Text>
+                <View className={`px-2 py-1 rounded ${item.status === 'ENTERED' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                    <Text className={`text-xs font-bold uppercase ${item.status === 'ENTERED' ? 'text-blue-700' : 'text-gray-600'}`}>
                         {item.status}
                     </Text>
                 </View>
             </View>
-            <Text className="text-gray-600 text-sm mb-1">{item.type} • {item.guest_phone || 'No Phone'}</Text>
+            <Text className="text-gray-600 text-sm mb-1">
+                {item.purpose || 'No purpose'} • {item.visitor_phone || 'No Phone'}
+            </Text>
+            {item.vehicle_number ? (
+                <Text className="text-gray-500 text-xs mb-1">🚗 {item.vehicle_number}</Text>
+            ) : null}
             {item.entry_time && (
                 <Text className="text-green-600 text-xs">
                     In: {new Date(item.entry_time).toLocaleTimeString()}
@@ -58,7 +61,7 @@ export default function GuardLogScreen() {
                     }
                     ListEmptyComponent={
                         <View className="py-10 items-center">
-                            <Text className="text-gray-400">No activity recorded</Text>
+                            <Text className="text-gray-400">No activity recorded today</Text>
                         </View>
                     }
                 />

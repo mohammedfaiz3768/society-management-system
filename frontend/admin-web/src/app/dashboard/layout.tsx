@@ -29,9 +29,11 @@ const NAV_ITEMS = [
     {
         label: "Operations",
         links: [
-            { href: "/dashboard/gate", label: "Gate & Visitors" },
-            { href: "/dashboard/gate-passes", label: "Gate Passes" },
+            { href: "/dashboard/visitors", label: "Visitor Log" },
+            { href: "/dashboard/gate", label: "Gate Passes (Overview)" },
+            { href: "/dashboard/gate-passes", label: "Gate Passes (All)" },
             { href: "/dashboard/delivery", label: "Delivery" },
+            { href: "/dashboard/services", label: "Service Requests" },
             { href: "/dashboard/complaints", label: "Complaints" },
             { href: "/dashboard/sos", label: "SOS Alerts" },
             { href: "/dashboard/emergency-alerts", label: "Emergency Alerts" },

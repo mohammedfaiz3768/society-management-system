@@ -92,8 +92,8 @@ export default function DashboardPage() {
         { label: "Total Flats", value: stats?.flats ?? 0, icon: "🏢", href: "/dashboard/flats" },
         { label: "Staff Members", value: stats?.staff ?? 0, icon: "👷", href: "/dashboard/staff" },
         { label: "Open Complaints", value: stats?.complaints_open ?? 0, icon: "⚠️", href: "/dashboard/complaints", alert: (stats?.complaints_open ?? 0) > 0 },
-        { label: "Open Services", value: stats?.services_open ?? 0, icon: "🔧", href: "/dashboard/gate" },
-        { label: "Today Visitors", value: stats?.today_visitors ?? 0, icon: "🚶", href: "/dashboard/gate" },
+        { label: "Open Services", value: stats?.services_open ?? 0, icon: "🔧", href: "/dashboard/services", alert: (stats?.services_open ?? 0) > 0 },
+        { label: "Today Visitors", value: stats?.today_visitors ?? 0, icon: "🚶", href: "/dashboard/visitors" },
         { label: "Active Polls", value: stats?.active_polls ?? 0, icon: "📊", href: "/dashboard/polls" },
         { label: "Emergencies Open", value: stats?.emergencies_open ?? 0, icon: "🚨", href: "/dashboard/emergency-alerts", alert: (stats?.emergencies_open ?? 0) > 0 },
     ];

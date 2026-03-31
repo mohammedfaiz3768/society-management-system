@@ -12,21 +12,23 @@ export default function ComplaintsScreen() {
     const { data: complaints, isLoading } = useMyComplaints();
 
     const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'pending': return 'bg-amber-100 text-amber-700';
-            case 'in_progress': return 'bg-blue-100 text-blue-700';
-            case 'resolved': return 'bg-green-100 text-green-700';
-            case 'closed': return 'bg-slate-100 text-slate-700';
+        switch (status?.toUpperCase()) {
+            case 'PENDING': return 'bg-amber-100 text-amber-700';
+            case 'OPEN': return 'bg-yellow-100 text-yellow-700';
+            case 'IN_PROGRESS': return 'bg-blue-100 text-blue-700';
+            case 'RESOLVED': return 'bg-green-100 text-green-700';
+            case 'CLOSED': return 'bg-slate-100 text-slate-700';
             default: return 'bg-slate-100 text-slate-700';
         }
     };
 
     const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'pending': return 'time-outline';
-            case 'in_progress': return 'construct-outline';
-            case 'resolved': return 'checkmark-circle-outline';
-            case 'closed': return 'close-circle-outline';
+        switch (status?.toUpperCase()) {
+            case 'PENDING': return 'time-outline';
+            case 'OPEN': return 'alert-circle-outline';
+            case 'IN_PROGRESS': return 'construct-outline';
+            case 'RESOLVED': return 'checkmark-circle-outline';
+            case 'CLOSED': return 'close-circle-outline';
             default: return 'help-circle-outline';
         }
     };

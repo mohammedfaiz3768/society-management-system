@@ -82,11 +82,7 @@ exports.respondSOS = async (req, res) => {
   try {
     const responder = req.user;
     const societyId = req.societyId;
-    const { sos_id } = req.body;
-
-    if (!sos_id) {
-      return res.status(400).json({ error: "sos_id is required" });
-    }
+    const sos_id = req.params.id;
 
     const sosCheck = await db.query(
       `SELECT id FROM sos_alerts WHERE id=$1 AND society_id=$2`,

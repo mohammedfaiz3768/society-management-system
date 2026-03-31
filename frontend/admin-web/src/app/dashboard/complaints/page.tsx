@@ -16,7 +16,7 @@ interface Complaint {
     id: number;
     title: string;
     description: string;
-    status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+    status: 'PENDING' | 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
     created_at: string;
     name: string;
     phone: string;
@@ -24,6 +24,7 @@ interface Complaint {
 }
 
 const STATUS_CONFIG = {
+    PENDING: { icon: Clock, color: 'text-yellow-600', label: 'Pending' },
     OPEN: { icon: Clock, color: 'text-amber-600', label: 'Open' },
     IN_PROGRESS: { icon: AlertCircle, color: 'text-blue-600', label: 'In Progress' },
     RESOLVED: { icon: CheckCircle, color: 'text-green-600', label: 'Resolved' },
@@ -123,6 +124,7 @@ export default function ComplaintsPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="PENDING">Pending</SelectItem>
                         <SelectItem value="OPEN">Open</SelectItem>
                         <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                         <SelectItem value="RESOLVED">Resolved</SelectItem>
@@ -236,6 +238,7 @@ export default function ComplaintsPage() {
                                 >
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="PENDING">Pending</SelectItem>
                                         <SelectItem value="OPEN">Open</SelectItem>
                                         <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
                                         <SelectItem value="RESOLVED">Resolved</SelectItem>

@@ -6,7 +6,8 @@ const {
   deliveryEntry,
   deliveryExit,
   getMyDeliveries,
-  getAllDeliveries
+  getAllDeliveries,
+  updateDeliveryStatus
 } = require("./deliveryController");
 
 const auth = require("../../middleware/authMiddleware");
@@ -18,6 +19,7 @@ router.post("/pass", requireRole("resident", "admin"), createDeliveryPass);
 router.get("/mine", requireRole("resident", "admin"), getMyDeliveries);
 router.post("/entry", requireRole("guard", "admin"), deliveryEntry);
 router.put("/exit/:id", requireRole("guard", "admin"), deliveryExit);
+router.patch("/:id", requireRole("admin"), updateDeliveryStatus);
 router.get("/", requireRole("admin"), getAllDeliveries);
 
 module.exports = router;

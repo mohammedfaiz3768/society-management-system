@@ -59,7 +59,7 @@ export default function EmergencyAlertsPage() {
         setFetchError("");
         try {
             // ✅ Correct endpoint — GET /emergency
-            const res = await api.get('/emergency?limit=20');
+            const res = await api.get('/emergency-alerts?limit=20');
             setAlerts(res.data);
         } catch {
             setFetchError("Failed to load emergency alerts");
@@ -86,7 +86,7 @@ export default function EmergencyAlertsPage() {
         setIsSubmitting(true);
         try {
             // ✅ Correct endpoint — POST /emergency
-            await api.post('/emergency', formData);
+            await api.post('/emergency-alerts', formData);
             resetForm();
             setIsDialogOpen(false);
             fetchAlerts();

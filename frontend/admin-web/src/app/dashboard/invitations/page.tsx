@@ -117,7 +117,7 @@ export default function InvitationsPage() {
     const revokeInvitation = async (id: number) => {
         if (!confirm("Revoke this invitation?")) return;
         try {
-            await api.delete(`/invitations/${id}/revoke`);
+            await api.delete(`/invitations/${id}`);
             fetchInvitations();
         } catch (err) {
             if (axios.isAxiosError(err)) {

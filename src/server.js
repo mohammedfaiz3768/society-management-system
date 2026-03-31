@@ -3,10 +3,10 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const { Server } = require("socket.io");
 
+dotenv.config();
+
 const app = require("./app");
 const { initWebrtcSignaling } = require("./webrtc/signaling");
-
-dotenv.config();
 
 const server = http.createServer(app);
 

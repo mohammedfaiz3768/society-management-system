@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface Invoice {
     id: number;
@@ -16,6 +16,8 @@ interface Invoice {
     due_date: string | null;
     paid_at: string | null;
     created_at: string;
+    user_name: string | null;
+    resident_flat: string | null;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -33,12 +35,14 @@ export default function BillingPage() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState("");
+    const [search, setSearch] = useState("");
 
     const fetchInvoices = async () => {
         setIsLoading(true);
         setFetchError("");
         try {
-            const res = await api.get('/invoices?limit=50');
+            // Try admin endpoint first, fall back to personal invoices
+            const res = await api.get('/invoices/all?limit=100');
             setInvoices(res.data);
         } catch {
             setFetchError("Failed to load invoices. Please refresh.");
@@ -49,27 +53,29 @@ export default function BillingPage() {
 
     useEffect(() => { fetchInvoices(); }, []);
 
-    // ✅ Derive stats from real data
-    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-    const totalCollection = invoices
-        .filter(i => i.status === 'PAID')
-        .reduce((sum, i) => sum + Number(i.amount), 0);
-    const totalPending = invoices
-        .filter(i => i.status === 'PENDING' || i.status === 'OVERDUE')
-        .reduce((sum, i) => sum + Number(i.amount), 0);
-    const thisMonth = invoices
-        .filter(i => i.month_year === currentMonth)
-        .reduce((sum, i) => sum + Number(i.amount), 0);
+    const filtered = invoices.filter(i => {
+        if (!search) return true;
+        const q = search.toLowerCase();
+        return (
+            i.user_name?.toLowerCase().includes(q) ||
+            i.resident_flat?.toLowerCase().includes(q) ||
+            i.month_year?.includes(q) ||
+            i.status?.toLowerCase().includes(q)
+        );
+    });
+
+    const totalCollection = invoices.filter(i => i.status === 'PAID').reduce((s, i) => s + Number(i.amount), 0);
+    const totalPending = invoices.filter(i => i.status === 'PENDING' || i.status === 'OVERDUE').reduce((s, i) => s + Number(i.amount), 0);
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const thisMonthTotal = invoices.filter(i => i.month_year === currentMonth).reduce((s, i) => s + Number(i.amount), 0);
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Billing & Invoices</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Invoices are auto-generated on the 1st of every month.
-                    </p>
-                </div>
+            <div>
+                <h2 className="text-2xl font-semibold tracking-tight">Billing & Invoices</h2>
+                <p className="text-sm text-muted-foreground">
+                    Invoices are auto-generated on the 1st of every month for all residents.
+                </p>
             </div>
 
             {fetchError && (
@@ -78,7 +84,6 @@ export default function BillingPage() {
                 </Alert>
             )}
 
-            {/* ✅ Real stats derived from invoice data */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
                     <CardHeader className="pb-2">
@@ -114,25 +119,33 @@ export default function BillingPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-slate-900">
-                            {isLoading ? '—' : formatINR(thisMonth)}
+                            {isLoading ? '—' : formatINR(thisMonthTotal)}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">{currentMonth}</p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Invoice Table */}
+            <div className="relative max-w-sm">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search resident, flat, month..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="pl-8"
+                />
+            </div>
+
             <div className="rounded-md border bg-white">
                 <div className="flex items-center justify-between px-4 py-3 border-b">
-                    <h3 className="text-sm font-medium">Invoices</h3>
-                    <p className="text-xs text-muted-foreground">
-                        Auto-generated monthly via cron job
-                    </p>
+                    <h3 className="text-sm font-medium">All Invoices</h3>
+                    <p className="text-xs text-muted-foreground">Auto-generated monthly via cron job</p>
                 </div>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>ID</TableHead>
+                            <TableHead>Resident</TableHead>
+                            <TableHead>Flat</TableHead>
                             <TableHead>Month</TableHead>
                             <TableHead>Amount</TableHead>
                             <TableHead>Status</TableHead>
@@ -143,21 +156,24 @@ export default function BillingPage() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
+                                <TableCell colSpan={7} className="h-24 text-center text-sm text-muted-foreground">
                                     Loading...
                                 </TableCell>
                             </TableRow>
-                        ) : invoices.length === 0 ? (
+                        ) : filtered.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
-                                    No invoices yet. They are generated automatically on the 1st of each month.
+                                <TableCell colSpan={7} className="h-24 text-center text-sm text-muted-foreground">
+                                    {search ? "No invoices match your search." : "No invoices yet. They are generated automatically on the 1st of each month."}
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            invoices.map((invoice) => (
+                            filtered.map((invoice) => (
                                 <TableRow key={invoice.id}>
-                                    <TableCell className="text-xs text-muted-foreground font-mono">
-                                        #{invoice.id}
+                                    <TableCell className="text-sm font-medium">
+                                        {invoice.user_name || '—'}
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {invoice.resident_flat || '—'}
                                     </TableCell>
                                     <TableCell className="text-sm font-medium">
                                         {invoice.month_year}
@@ -171,14 +187,10 @@ export default function BillingPage() {
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-xs text-muted-foreground">
-                                        {invoice.due_date
-                                            ? new Date(invoice.due_date).toLocaleDateString()
-                                            : '—'}
+                                        {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '—'}
                                     </TableCell>
                                     <TableCell className="text-xs text-muted-foreground">
-                                        {invoice.paid_at
-                                            ? new Date(invoice.paid_at).toLocaleDateString()
-                                            : '—'}
+                                        {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString() : '—'}
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -187,9 +199,9 @@ export default function BillingPage() {
                 </Table>
             </div>
 
-            {!isLoading && invoices.length > 0 && (
+            {!isLoading && (
                 <p className="text-xs text-muted-foreground">
-                    Showing {invoices.length} invoices
+                    Showing {filtered.length} of {invoices.length} invoices
                 </p>
             )}
         </div>

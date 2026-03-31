@@ -8,17 +8,27 @@ import {
     Linking,
     ActivityIndicator,
     Vibration,
+    ScrollView,
 } from "react-native";
 import * as Location from "expo-location";
-import axios from "axios";
-import { Card } from "@/components/ui/Card";
+import { apiClient } from "../../src/api/client";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
+interface EmergencyService {
+    name: string;
+    number: string;
+}
+
+interface EmergencyContacts {
+    FIRE?: EmergencyService;
+    AMBULANCE?: EmergencyService;
+    POLICE?: EmergencyService;
+    [key: string]: EmergencyService | undefined;
+}
 
 export default function SOSScreen() {
-    const [location, setLocation] = useState<any>(null);
+    const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [loading, setLoading] = useState(false);
-    const [emergencyContacts, setEmergencyContacts] = useState<any>(null);
+    const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContacts | null>(null);
 
     useEffect(() => {
         requestLocationPermission();
@@ -37,7 +47,7 @@ export default function SOSScreen() {
 
     const fetchEmergencyContacts = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/sos/emergency-contacts`);
+            const response = await apiClient.get("/sos/emergency-contacts");
             setEmergencyContacts(response.data.contacts);
         } catch (error) {
             console.error("Error fetching emergency contacts:", error);
@@ -49,14 +59,12 @@ export default function SOSScreen() {
             const loc = await Location.getCurrentPositionAsync({
                 accuracy: Location.Accuracy.High,
             });
-            setLocation({
-                lat: loc.coords.latitude,
-                lng: loc.coords.longitude,
-            });
-            return {
+            const coords = {
                 lat: loc.coords.latitude,
                 lng: loc.coords.longitude,
             };
+            setLocation(coords);
+            return coords;
         } catch (error) {
             console.error("Error getting location:", error);
             return null;
@@ -66,25 +74,24 @@ export default function SOSScreen() {
     const triggerSOS = async (
         type: string,
         message: string,
-        autoCall: boolean = false
+        autoCall: boolean = false,
+        triggerBuzzer: boolean = false
     ) => {
         setLoading(true);
-        Vibration.vibrate([0, 500, 200, 500]); // Immediate feedback
+        Vibration.vibrate([0, 500, 200, 500]);
 
         try {
-            // Get current location
             const loc = await getCurrentLocation();
 
-            // Send SOS to backend
-            const response = await axios.post(`${API_URL}/api/sos/create`, {
+            await apiClient.post("/sos/create", {
                 type,
                 message,
                 lat: loc?.lat,
                 lng: loc?.lng,
                 auto_call: autoCall,
+                trigger_buzzer: triggerBuzzer,
             });
 
-            // If auto-call enabled, make the call
             if (autoCall && emergencyContacts) {
                 const service = getServiceForType(type);
                 if (service) {
@@ -95,16 +102,19 @@ export default function SOSScreen() {
                             { text: "Cancel", style: "cancel" },
                             {
                                 text: "Call Now",
-                                onPress: () => makeEmergencyCall(service.number),
+                                onPress: () => Linking.openURL(`tel:${service.number}`),
                             },
                         ]
                     );
+                    return;
                 }
             }
 
             Alert.alert(
-                "SOS Alert Sent!",
-                "Emergency alert has been sent to all admins and guards.",
+                triggerBuzzer ? "Buzzer Activated!" : "SOS Alert Sent!",
+                triggerBuzzer
+                    ? "Emergency buzzer has been triggered on all devices."
+                    : "Emergency alert has been sent to all admins and guards.",
                 [{ text: "OK" }]
             );
         } catch (error) {
@@ -115,28 +125,20 @@ export default function SOSScreen() {
         }
     };
 
-    const getServiceForType = (type: string) => {
+    const getServiceForType = (type: string): EmergencyService | null => {
         if (!emergencyContacts) return null;
         switch (type) {
-            case "fire":
-                return emergencyContacts.FIRE;
-            case "medical":
-                return emergencyContacts.AMBULANCE;
-            case "police":
-                return emergencyContacts.POLICE;
-            default:
-                return null;
+            case "fire": return emergencyContacts.FIRE ?? null;
+            case "medical": return emergencyContacts.AMBULANCE ?? null;
+            case "police": return emergencyContacts.POLICE ?? null;
+            default: return null;
         }
-    };
-
-    const makeEmergencyCall = (number: string) => {
-        Linking.openURL(`tel:${number}`);
     };
 
     const handleEmergencyPress = (type: string, name: string) => {
         Alert.alert(
             `${name} Emergency`,
-            "This will send an SOS alert and can auto-call emergency services.",
+            "This will send an SOS alert to all guards and admins.",
             [
                 { text: "Cancel", style: "cancel" },
                 {
@@ -144,7 +146,7 @@ export default function SOSScreen() {
                     onPress: () => triggerSOS(type, `${name} Emergency`, false),
                 },
                 {
-                    text: "Alert + Auto Call",
+                    text: "Alert + Call",
                     style: "destructive",
                     onPress: () => triggerSOS(type, `${name} Emergency`, true),
                 },
@@ -162,7 +164,7 @@ export default function SOSScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
             <View style={styles.header}>
                 <Text style={styles.title}>🚨 Emergency SOS</Text>
                 <Text style={styles.subtitle}>
@@ -222,23 +224,13 @@ export default function SOSScreen() {
                 onLongPress={() => {
                     Alert.alert(
                         "Activate Buzzer?",
-                        "Long press detected. Send alert with buzzer to all residents?",
+                        "This will trigger a loud alert on all resident devices.",
                         [
                             { text: "No", style: "cancel" },
                             {
                                 text: "Yes - Buzzer ON",
                                 style: "destructive",
-                                onPress: async () => {
-                                    const loc = await getCurrentLocation();
-                                    await axios.post(`${API_URL}/api/sos/create`, {
-                                        type: "general",
-                                        message: "URGENT SOS - BUZZER ACTIVATED",
-                                        lat: loc?.lat,
-                                        lng: loc?.lng,
-                                        trigger_buzzer: true,
-                                    });
-                                    Alert.alert("Alert Sent!", "Buzzer activated on all devices");
-                                },
+                                onPress: () => triggerSOS("general", "URGENT SOS - BUZZER ACTIVATED", false, true),
                             },
                         ]
                     );
@@ -251,15 +243,18 @@ export default function SOSScreen() {
             <Text style={styles.footerText}>
                 📍 Location will be shared automatically
             </Text>
-        </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 20,
         backgroundColor: "#fff",
+    },
+    contentContainer: {
+        padding: 20,
+        paddingBottom: 40,
     },
     loadingContainer: {
         flex: 1,
@@ -353,7 +348,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 8
+        elevation: 8,
     },
     bigSOSText: {
         fontSize: 32,

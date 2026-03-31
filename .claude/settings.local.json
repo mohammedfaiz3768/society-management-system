@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -rn router. c:/Users/khanf/society-backend/src/routes/ --include=*.js -l)"
+      "Bash(grep -rn router. c:/Users/khanf/society-backend/src/routes/ --include=*.js -l)",
+      "Bash(xargs grep:*)",
+      "Bash(find c:/Users/khanf/society-backend/frontend/mobile-app/src/api -type f -name *.ts)",
+      "Bash(find c:/Users/khanf/society-backend/src/controllers -name *.js)",
+      "Bash(grep -r \"TODO\\\\|FIXME\\\\|STUB\\\\|XXX\" c:/Users/khanf/society-backend/src --include=*.js)"
     ]
   }
 }

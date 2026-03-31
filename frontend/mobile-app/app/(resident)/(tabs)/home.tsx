@@ -1,16 +1,43 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { getNotifications } from '../../../src/api/notifications/notifications.api';
+import { apiClient } from '../../../src/api/client';
+
+interface ResidentStats {
+    complaints_open: number;
+    services_open: number;
+    today_visitors: number;
+    notifications_unread: number;
+    latest_announcements: { id: number; title: string; message: string; created_at: string }[];
+}
+
+function timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+}
 
 export default function HomeScreen() {
     const router = useRouter();
     const { user, logout } = useAuthStore();
+
+    const { data: stats } = useQuery<ResidentStats>({
+        queryKey: ['resident-stats'],
+        queryFn: async () => {
+            const res = await apiClient.get('/dashboard/resident-stats');
+            return res.data;
+        },
+        staleTime: 60000,
+    });
 
     const { data: notifications = [] } = useQuery({
         queryKey: ['notifications'],
@@ -37,21 +64,6 @@ export default function HomeScreen() {
         );
     };
 
-    const handleSOS = () => {
-        Alert.alert(
-            '🚨 Emergency SOS',
-            'This will alert security and management. Continue?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Send SOS', style: 'destructive', onPress: () => {
-                        Alert.alert('SOS Sent', 'Help is on the way!');
-                    }
-                }
-            ]
-        );
-    };
-
     const quickActions = [
         { name: 'Visitors', icon: 'people-outline', route: '/(resident)/(tabs)/gate', color: '#06B6D4', bg: 'bg-cyan-50' },
         { name: 'Maintenance', icon: 'construct-outline', route: '/(resident)/maintenance', color: '#F59E0B', bg: 'bg-amber-50' },
@@ -60,6 +72,8 @@ export default function HomeScreen() {
         { name: 'Directory', icon: 'book-outline', route: '/(resident)/directory', color: '#3B82F6', bg: 'bg-blue-50' },
         { name: 'Parking', icon: 'car-outline', route: '/(resident)/parking', color: '#64748B', bg: 'bg-slate-100' },
     ];
+
+    const announcements = stats?.latest_announcements ?? [];
 
     return (
         <View className="flex-1 bg-slate-50">
@@ -115,32 +129,47 @@ export default function HomeScreen() {
             >
                 {/* Stats Row */}
                 <View className="flex-row gap-4 mb-6">
-                    <View className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 items-center">
+                    <TouchableOpacity
+                        onPress={() => router.push('/(resident)/complaints')}
+                        className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 items-center"
+                    >
                         <View className="w-10 h-10 bg-orange-100 rounded-full items-center justify-center mb-2">
                             <Ionicons name="warning-outline" size={20} color="#F97316" />
                         </View>
-                        <Text className="text-2xl font-bold text-slate-900">1</Text>
-                        <Text className="text-xs text-slate-500 font-medium">Active Complaint</Text>
-                    </View>
-                    <View className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 items-center">
+                        <Text className="text-2xl font-bold text-slate-900">
+                            {stats?.complaints_open ?? '—'}
+                        </Text>
+                        <Text className="text-xs text-slate-500 font-medium text-center">Open Complaints</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => router.push('/(resident)/(tabs)/gate')}
+                        className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 items-center"
+                    >
                         <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center mb-2">
                             <Ionicons name="people-outline" size={20} color="#3B82F6" />
                         </View>
-                        <Text className="text-2xl font-bold text-slate-900">0</Text>
-                        <Text className="text-xs text-slate-500 font-medium">Visitors Today</Text>
-                    </View>
-                    <View className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 items-center">
-                        <View className="w-10 h-10 bg-emerald-100 rounded-full items-center justify-center mb-2">
-                            <Ionicons name="leaf-outline" size={20} color="#10B981" />
+                        <Text className="text-2xl font-bold text-slate-900">
+                            {stats?.today_visitors ?? '—'}
+                        </Text>
+                        <Text className="text-xs text-slate-500 font-medium text-center">Visitors Today</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => router.push('/(resident)/notifications')}
+                        className="flex-1 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 items-center"
+                    >
+                        <View className="w-10 h-10 bg-purple-100 rounded-full items-center justify-center mb-2">
+                            <Ionicons name="notifications-outline" size={20} color="#8B5CF6" />
                         </View>
-                        <Text className="text-2xl font-bold text-slate-900">Good</Text>
-                        <Text className="text-xs text-slate-500 font-medium">Air Quality</Text>
-                    </View>
+                        <Text className="text-2xl font-bold text-slate-900">
+                            {stats?.notifications_unread ?? '—'}
+                        </Text>
+                        <Text className="text-xs text-slate-500 font-medium text-center">Unread Alerts</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* SOS Card */}
                 <TouchableOpacity
-                    onPress={handleSOS}
+                    onPress={() => router.push('/(resident)/sos')}
                     activeOpacity={0.9}
                     className="mb-8 overflow-hidden rounded-2xl shadow-lg shadow-red-500/30"
                 >
@@ -153,7 +182,7 @@ export default function HomeScreen() {
                         </View>
                         <View className="flex-1">
                             <Text className="text-white text-lg font-bold">Emergency SOS</Text>
-                            <Text className="text-red-100 text-sm">Tap here for immediate assistance</Text>
+                            <Text className="text-red-100 text-sm">Tap to open emergency panel</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={24} color="white" style={{ opacity: 0.8 }} />
                     </LinearGradient>
@@ -178,7 +207,7 @@ export default function HomeScreen() {
                     </View>
                 </View>
 
-                {/* Community Board Preview */}
+                {/* Community Board */}
                 <View>
                     <View className="flex-row justify-between items-center mb-4">
                         <Text className="text-lg font-bold text-slate-900">Community Board</Text>
@@ -187,12 +216,31 @@ export default function HomeScreen() {
                         </TouchableOpacity>
                     </View>
 
-                    <View className="bg-white p-6 rounded-2xl border border-dashed border-slate-300 items-center justify-center py-8">
-                        <View className="w-12 h-12 bg-slate-50 rounded-full items-center justify-center mb-3">
-                            <Ionicons name="notifications-off-outline" size={24} color="#94a3b8" />
+                    {announcements.length === 0 ? (
+                        <View className="bg-white p-6 rounded-2xl border border-dashed border-slate-300 items-center justify-center py-8">
+                            <View className="w-12 h-12 bg-slate-50 rounded-full items-center justify-center mb-3">
+                                <Ionicons name="notifications-off-outline" size={24} color="#94a3b8" />
+                            </View>
+                            <Text className="text-slate-400 font-medium">No new announcements</Text>
                         </View>
-                        <Text className="text-slate-400 font-medium">No new announcements</Text>
-                    </View>
+                    ) : (
+                        <View className="gap-3">
+                            {announcements.map((item) => (
+                                <View
+                                    key={item.id}
+                                    className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm"
+                                >
+                                    <Text className="text-slate-900 font-semibold text-sm mb-1" numberOfLines={1}>
+                                        {item.title}
+                                    </Text>
+                                    <Text className="text-slate-500 text-xs leading-5" numberOfLines={2}>
+                                        {item.message}
+                                    </Text>
+                                    <Text className="text-slate-400 text-xs mt-2">{timeAgo(item.created_at)}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </View>

@@ -226,6 +226,34 @@ exports.getMyDeliveries = async (req, res) => {
   }
 };
 
+exports.updateDeliveryStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const societyId = req.societyId;
+
+  const VALID_STATUSES = ["pending", "delivered", "collected", "returned"];
+  if (!status || !VALID_STATUSES.includes(status)) {
+    return res.status(400).json({ message: `Status must be one of: ${VALID_STATUSES.join(", ")}` });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE deliveries SET status=$1 WHERE id=$2 AND society_id=$3 RETURNING *`,
+      [status, id, societyId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Delivery not found" });
+    }
+
+    return res.json(result.rows[0]);
+
+  } catch (err) {
+    console.error("updateDeliveryStatus error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.getAllDeliveries = async (req, res) => {
   const societyId = req.societyId;
 

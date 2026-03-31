@@ -3,12 +3,20 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, View } from 'react-native';
 import { useFonts } from 'expo-font';
+import { useQuery } from '@tanstack/react-query';
+import { listSosAlerts } from '../../src/api/sos/sos.api';
 
 export default function GuardLayout() {
-    // Ensure Ionicons font is loaded
     const [fontsLoaded] = useFonts({
         ...Ionicons.font,
     });
+
+    const { data: sosAlerts } = useQuery({
+        queryKey: ['sos', 'all'],
+        queryFn: listSosAlerts,
+        refetchInterval: 15000,
+    });
+    const activeAlertCount = sosAlerts?.filter(a => a.status !== 'RESOLVED').length || 0;
 
     if (!fontsLoaded) {
         return (
@@ -59,7 +67,7 @@ export default function GuardLayout() {
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="alert-circle-outline" size={size} color={color} />
                     ),
-                    tabBarBadge: 3, // Mock badge
+                    tabBarBadge: activeAlertCount > 0 ? activeAlertCount : undefined,
                 }}
             />
             <Tabs.Screen

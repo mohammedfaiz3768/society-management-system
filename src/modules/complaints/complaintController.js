@@ -2,7 +2,7 @@ const pool = require("../../config/db");
 const { logActivity } = require("../../utils/activityLogger");
 const { sendNotification } = require("../../utils/sendNotification");
 
-const VALID_STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
+const VALID_STATUSES = ["PENDING", "OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
 
 exports.createComplaint = async (req, res) => {
   const userId = req.user.id;
@@ -78,7 +78,11 @@ exports.getAllComplaints = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const offset = (page - 1) * limit;
-  const { status } = req.query;
+  let status = req.query.status;
+
+  if (typeof status === 'string') {
+    status = status.trim().toUpperCase();
+  }
 
   if (status && !VALID_STATUSES.includes(status)) {
     return res.status(400).json({
@@ -108,11 +112,15 @@ exports.getAllComplaints = async (req, res) => {
 
 exports.updateComplaint = async (req, res) => {
   const { id } = req.params;
-  const { status, admin_comment } = req.body;
+  let { status, admin_comment } = req.body;
   const societyId = req.societyId;
 
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Only admins can update complaints" });
+  }
+
+  if (typeof status === 'string') {
+    status = status.trim().toUpperCase();
   }
 
   if (status && !VALID_STATUSES.includes(status)) {
@@ -136,8 +144,7 @@ exports.updateComplaint = async (req, res) => {
     const updated = await pool.query(
       `UPDATE complaints
              SET status        = $1,
-                 admin_comment = $2,
-                 updated_at    = NOW()
+                 admin_comment = $2
              WHERE id = $3 AND society_id = $4
              RETURNING *`,
       [

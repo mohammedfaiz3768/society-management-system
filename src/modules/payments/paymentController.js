@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const db = require("../../config/db");
+const pool = require("../../config/db");
 const razorpayService = require("../../services/razorpayService");
 
 exports.createOrder = async (req, res) => {
@@ -12,7 +12,7 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ error: "bill_id is required" });
     }
 
-    const billResult = await db.query(
+    const billResult = await pool.query(
       `SELECT amount FROM maintenance_bills
              WHERE id = $1 AND user_id = $2 AND society_id = $3 AND status = 'PENDING'`,
       [bill_id, userId, societyId]
@@ -24,7 +24,7 @@ exports.createOrder = async (req, res) => {
 
     const amount = billResult.rows[0].amount;
 
-    const existing = await db.query(
+    const existing = await pool.query(
       `SELECT order_id FROM payments
              WHERE user_id = $1 AND bill_id = $2 AND status = 'PENDING'`,
       [userId, bill_id]
@@ -37,7 +37,7 @@ exports.createOrder = async (req, res) => {
     const receipt = `rcpt_${userId}_${Date.now()}`;
     const order = await razorpayService.createOrder(amount, receipt);
 
-    await db.query(
+    await pool.query(
       `INSERT INTO payments (user_id, bill_id, order_id, amount, currency, status, society_id)
              VALUES ($1, $2, $3, $4, 'INR', 'PENDING', $5)`,
       [userId, bill_id, order.id, order.amount, societyId]
@@ -79,26 +79,30 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid payment signature" });
     }
 
-    await db.query("BEGIN");
+    const client = await pool.connect();
     try {
-      await db.query(
+      await client.query("BEGIN");
+
+      await client.query(
         `UPDATE payments
                  SET payment_id = $1, status = 'SUCCESS', updated_at = NOW()
                  WHERE order_id = $2 AND society_id = $3`,
         [payment_id, order_id, societyId]
       );
 
-      await db.query(
+      await client.query(
         `UPDATE maintenance_bills
                  SET status = 'PAID', paid_at = NOW()
                  WHERE id = $1 AND society_id = $2`,
         [paymentRow.rows[0].bill_id, societyId]
       );
 
-      await db.query("COMMIT");
+      await client.query("COMMIT");
     } catch (txErr) {
-      await db.query("ROLLBACK");
+      await client.query("ROLLBACK");
       throw txErr;
+    } finally {
+      client.release();
     }
 
     return res.json({ success: true, message: "Payment verified successfully" });

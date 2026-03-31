@@ -1,26 +1,37 @@
 import { z } from 'zod';
 
 export const GatePassTypeEnum = z.enum(['Visitor', 'Delivery', 'Cab']);
+
+// Matches the actual values used by the backend
 export const GatePassStatusEnum = z.enum([
     'PENDING',
-    'APPROVED',
-    'REJECTED',
     'ENTERED',
     'EXITED',
     'EXPIRED',
+    // legacy values kept for compatibility
+    'APPROVED',
+    'REJECTED',
+    'USED',
 ]);
 
 export const GatePassSchema = z.object({
     id: z.number(),
     society_id: z.number().optional(),
     user_id: z.number(),
-    visitor_name: z.string().min(1, 'Visitor name is required'),
+    visitor_name: z.string(),
     visitor_phone: z.string().nullable().optional(),
     vehicle_number: z.string().nullable().optional(),
     purpose: z.string().nullable().optional(),
     qr_code: z.string(),
-    valid_until: z.string(), 
+    valid_from: z.string().nullable().optional(),
+    valid_until: z.string(),
+    status: GatePassStatusEnum.optional(),
     used: z.boolean().optional(),
+    entry_time: z.string().nullable().optional(),
+    exit_time: z.string().nullable().optional(),
+    guard_id: z.number().nullable().optional(),
+    flat_number: z.string().nullable().optional(),
+    block: z.string().nullable().optional(),
     number_of_people: z.number().optional().default(1),
     created_at: z.string(),
 });

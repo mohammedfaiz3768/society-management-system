@@ -51,7 +51,7 @@ export default function SOSPage() {
 
     const fetchSOSAlerts = async () => {
         try {
-            const res = await api.get('/sos');
+            const res = await api.get('/sos/all');
             setSOSAlerts(res.data);
         } catch {
             setError("Failed to load SOS alerts");
@@ -91,7 +91,7 @@ export default function SOSPage() {
         setIsSubmitting(true);
         setError("");
         try {
-            await api.post('/sos', {
+            await api.post('/sos/create', {
                 message: adminMessage,
                 type: "general",
                 trigger_buzzer: triggerBuzzer,
@@ -114,7 +114,7 @@ export default function SOSPage() {
     const respondToSOS = async (id: number) => {
         setError("");
         try {
-            await api.post('/sos/respond', { sos_id: id });
+            await api.post(`/sos/respond/${id}`);
             fetchSOSAlerts();
         } catch (err) {
             if (axios.isAxiosError(err)) {
@@ -128,7 +128,7 @@ export default function SOSPage() {
     const resolveSOS = async (id: number) => {
         setError("");
         try {
-            await api.patch(`/sos/${id}/resolve`);
+            await api.post(`/sos/resolve/${id}`);
             fetchSOSAlerts();
         } catch (err) {
             if (axios.isAxiosError(err)) {
