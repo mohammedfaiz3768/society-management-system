@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rn router. c:/Users/khanf/society-backend/src/routes/ --include=*.js -l)"
+    ]
+  }
+}

@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import api from "@/lib/api";
+import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
     Card,
-    CardContent,
     CardDescription,
     CardFooter,
     CardHeader,
@@ -34,12 +35,19 @@ interface Document {
     created_at: string;
 }
 
+const LIMIT = 100;
+
 export default function DocumentsPage() {
+    const router = useRouter();
+    const { user, isLoading: authLoading } = useAuth();
+
     const [docs, setDocs] = useState<Document[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [fetchError, setFetchError] = useState("");
+    const [actionError, setActionError] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState("");
+    const [uploadError, setUploadError] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState({
@@ -48,28 +56,46 @@ export default function DocumentsPage() {
     });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push("/login");
+        }
+    }, [user, authLoading, router]);
+
+    const resetForm = () => {
+        setFormData({ title: "", description: "" });
+        setSelectedFile(null);
+        setUploadError("");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
     const fetchDocs = async () => {
         setIsLoading(true);
+        setFetchError("");
         try {
-            const res = await api.get('/documents');
+            const res = await api.get(`/documents?limit=${LIMIT}`);
             setDocs(res.data);
         } catch (err) {
-            console.error("Failed to fetch docs", err);
+            if (axios.isAxiosError(err)) {
+                setFetchError(err.response?.data?.message || "Failed to load documents");
+            } else {
+                setFetchError("Failed to load documents");
+            }
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchDocs();
-    }, []);
+        if (user) fetchDocs();
+    }, [user]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
+        setUploadError("");
 
         if (!selectedFile) {
-            setError("Please select a file");
+            setUploadError("Please select a file");
             return;
         }
 
@@ -82,18 +108,16 @@ export default function DocumentsPage() {
 
         try {
             await api.post('/documents', data, {
-                headers: { "Content-Type": "multipart/form-data" }
+                headers: { "Content-Type": "multipart/form-data" },
             });
             setIsDialogOpen(false);
-            setFormData({ title: "", description: "" });
-            setSelectedFile(null);
-            if (fileInputRef.current) fileInputRef.current.value = "";
+            resetForm();
             fetchDocs();
         } catch (err) {
             if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.message || "Failed to upload document");
+                setUploadError(err.response?.data?.message || "Failed to upload document");
             } else {
-                setError("An unexpected error occurred");
+                setUploadError("An unexpected error occurred");
             }
         } finally {
             setIsSubmitting(false);
@@ -102,27 +126,39 @@ export default function DocumentsPage() {
 
     const handleDelete = async (id: number) => {
         if (!confirm("Delete this document?")) return;
+        setActionError("");
         try {
             await api.delete(`/documents/${id}`);
             fetchDocs();
         } catch (err) {
-            alert("Failed to delete document");
+            if (axios.isAxiosError(err)) {
+                setActionError(err.response?.data?.message || "Failed to delete document");
+            } else {
+                setActionError("Failed to delete document");
+            }
         }
     };
 
-    const handleDownload = async (id: number, title: string) => {
+    const handleDownload = async (id: number, title: string, fileType: string) => {
+        setActionError("");
         try {
-            const response = await api.get(`/documents/${id}/download`, { responseType: 'blob' });
+            const response = await api.get(`/documents/${id}/download`, { responseType: "blob" });
             const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
+            const ext = fileType?.split("/")[1];
+            const filename = ext ? `${title}.${ext}` : title;
+            const link = document.createElement("a");
             link.href = url;
-            link.setAttribute('download', title); // or extract filename from header
+            link.setAttribute("download", filename);
             document.body.appendChild(link);
             link.click();
             link.remove();
+            window.URL.revokeObjectURL(url);
         } catch (err) {
-            console.error(err);
-            alert("Download failed");
+            if (axios.isAxiosError(err)) {
+                setActionError(err.response?.data?.message || "Download failed");
+            } else {
+                setActionError("Download failed");
+            }
         }
     };
 
@@ -130,10 +166,16 @@ export default function DocumentsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Documents</h2>
+                    <h2 className="text-2xl font-semibold tracking-tight">Documents</h2>
                     <p className="text-muted-foreground">Repository for society bylaws, notices, and forms.</p>
                 </div>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <Dialog
+                    open={isDialogOpen}
+                    onOpenChange={(open) => {
+                        setIsDialogOpen(open);
+                        if (!open) resetForm();
+                    }}
+                >
                     <DialogTrigger asChild>
                         <Button>
                             <Plus className="mr-2 h-4 w-4" /> Upload Document
@@ -144,15 +186,25 @@ export default function DocumentsPage() {
                             <DialogTitle>Upload Document</DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-                            {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-
+                            {uploadError && (
+                                <Alert variant="destructive">
+                                    <AlertDescription>{uploadError}</AlertDescription>
+                                </Alert>
+                            )}
                             <div className="space-y-2">
                                 <Label>Title</Label>
-                                <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required />
+                                <Input
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    required
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Description</Label>
-                                <Textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                                <Textarea
+                                    value={formData.description}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>File</Label>
@@ -163,7 +215,6 @@ export default function DocumentsPage() {
                                     required
                                 />
                             </div>
-
                             <Button type="submit" className="w-full" disabled={isSubmitting}>
                                 {isSubmitting ? "Uploading..." : "Upload"}
                             </Button>
@@ -172,9 +223,23 @@ export default function DocumentsPage() {
                 </Dialog>
             </div>
 
+            {fetchError && (
+                <Alert variant="destructive">
+                    <AlertDescription>{fetchError}</AlertDescription>
+                </Alert>
+            )}
+
+            {actionError && (
+                <Alert variant="destructive">
+                    <AlertDescription>{actionError}</AlertDescription>
+                </Alert>
+            )}
+
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {isLoading ? (
-                    <div className="col-span-full text-center py-10">Loading documents...</div>
+                    <div className="col-span-full flex justify-center items-center py-16">
+                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    </div>
                 ) : docs.length === 0 ? (
                     <div className="col-span-full text-center py-10 text-muted-foreground">
                         No documents uploaded yet.
@@ -187,7 +252,9 @@ export default function DocumentsPage() {
                                     <div className="p-2 bg-blue-50 rounded-lg">
                                         <FileText className="h-6 w-6 text-blue-600" />
                                     </div>
-                                    <Badge variant="outline">{doc.file_type.split('/')[1]?.toUpperCase() || 'FILE'}</Badge>
+                                    <Badge variant="outline">
+                                        {doc.file_type?.split("/")[1]?.toUpperCase() || "FILE"}
+                                    </Badge>
                                 </div>
                                 <CardTitle className="mt-4 text-lg">{doc.title}</CardTitle>
                                 <CardDescription className="line-clamp-2 min-h-[40px]">
@@ -195,10 +262,18 @@ export default function DocumentsPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardFooter className="mt-auto flex gap-2">
-                                <Button variant="outline" className="flex-1" onClick={() => handleDownload(doc.id, doc.title)}>
+                                <Button
+                                    variant="outline"
+                                    className="flex-1"
+                                    onClick={() => handleDownload(doc.id, doc.title, doc.file_type)}
+                                >
                                     <Download className="mr-2 h-4 w-4" /> Download
                                 </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDelete(doc.id)}>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDelete(doc.id)}
+                                >
                                     <Trash2 className="h-4 w-4 text-red-500" />
                                 </Button>
                             </CardFooter>
@@ -206,6 +281,12 @@ export default function DocumentsPage() {
                     ))
                 )}
             </div>
+
+            {!isLoading && docs.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                    Showing {docs.length} document{docs.length !== 1 ? "s" : ""}
+                </p>
+            )}
         </div>
     );
 }

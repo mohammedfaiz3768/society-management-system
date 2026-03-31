@@ -1,70 +1,70 @@
-'use client';
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
+    const router = useRouter();
+    const { user, isLoading: authLoading } = useAuth();
+
+    useEffect(() => {
+        if (!authLoading && !user) router.push("/login");
+    }, [user, authLoading, router]);
+
     return (
-        <div className="max-w-4xl">
-            <h1 className="text-2xl font-bold text-slate-900 mb-6">Settings</h1>
-
-            {/* General Settings */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold mb-4">General Settings</h2>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Society Name
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="Enter society name"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Address
-                        </label>
-                        <textarea
-                            placeholder="Enter society address"
-                            rows={3}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md"
-                        />
-                    </div>
-                </div>
+        <div className="max-w-2xl space-y-6">
+            <div>
+                <h2 className="text-2xl font-semibold tracking-tight">Settings</h2>
+                <p className="text-muted-foreground">Manage your society configuration.</p>
             </div>
 
-            {/* Email Settings */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold mb-4">Email Configuration</h2>
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            SMTP Server
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="smtp.gmail.com"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md"
-                        />
+            <Card>
+                <CardHeader>
+                    <CardTitle>General Settings</CardTitle>
+                    <CardDescription>Basic information about your society</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Society Name</Label>
+                        <Input placeholder="Enter society name" />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Email Username
-                        </label>
-                        <input
-                            type="email"
-                            placeholder="your-email@example.com"
-                            className="w-full px-3 py-2 border border-slate-300 rounded-md"
-                        />
+                    <div className="space-y-2">
+                        <Label>Address</Label>
+                        <Textarea placeholder="Enter society address" rows={3} />
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
-            {/* Save Button */}
-            <div className="bg-white rounded-lg shadow p-6">
-                <button className="bg-slate-900 text-white px-4 py-2 rounded-md hover:bg-slate-800">
-                    Save Settings
-                </button>
-            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Email Configuration</CardTitle>
+                    <CardDescription>SMTP settings for outgoing emails</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>SMTP Server</Label>
+                        <Input placeholder="smtp.gmail.com" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Email Username</Label>
+                        <Input type="email" placeholder="your-email@example.com" />
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Button disabled>Save Settings</Button>
         </div>
     );
 }
