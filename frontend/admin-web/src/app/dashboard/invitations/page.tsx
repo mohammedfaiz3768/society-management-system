@@ -72,7 +72,7 @@ export default function InvitationsPage() {
         setFetchError("");
         try {
             const res = await api.get(`/invitations?limit=${LIMIT}`);
-            setInvitations(res.data);
+            setInvitations(res.data.invitations ?? res.data);
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 setFetchError(err.response?.data?.message || "Failed to load invitations");
