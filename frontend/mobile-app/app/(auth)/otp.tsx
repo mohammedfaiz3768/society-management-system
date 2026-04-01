@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '../../src/store/authStore';
-import { verifyOtp } from '../../src/api/auth/auth.api';
+import { verifyOtp, resendOtp } from '../../src/api/auth/auth.api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -15,9 +15,31 @@ export default function OtpScreen() {
     const { email } = useLocalSearchParams<{ email: string }>();
     const router = useRouter();
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [countdown, setCountdown] = useState(30);
+    const [isResending, setIsResending] = useState(false);
     const login = useAuthStore((state) => state.login);
 
     const inputRefs = React.useRef<Array<TextInput | null>>([]);
+
+    useEffect(() => {
+        if (countdown <= 0) return;
+        const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [countdown]);
+
+    const handleResend = async () => {
+        if (countdown > 0 || isResending) return;
+        setIsResending(true);
+        try {
+            await resendOtp(email || '');
+            setCountdown(30);
+            Alert.alert('Code Sent', 'A new verification code has been sent to your email.');
+        } catch {
+            Alert.alert('Error', 'Failed to resend code. Please try again.');
+        } finally {
+            setIsResending(false);
+        }
+    };
 
     const verifyOtpMutation = useMutation({
         mutationFn: (code: string) => verifyOtp({ email: email || '', code }),
@@ -135,8 +157,10 @@ export default function OtpScreen() {
 
                         <View className="mt-8 flex-row justify-center items-center">
                             <Text className="text-slate-400">Didn't receive code? </Text>
-                            <TouchableOpacity>
-                                <Text className="text-indigo-400 font-bold ml-1">Resend in 30s</Text>
+                            <TouchableOpacity onPress={handleResend} disabled={countdown > 0 || isResending}>
+                                <Text className={`font-bold ml-1 ${countdown > 0 || isResending ? 'text-slate-500' : 'text-indigo-400'}`}>
+                                    {isResending ? 'Sending...' : countdown > 0 ? `Resend in ${countdown}s` : 'Resend'}
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     </View>

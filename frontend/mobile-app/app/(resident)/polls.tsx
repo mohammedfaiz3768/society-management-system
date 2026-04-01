@@ -37,8 +37,7 @@ export default function PollsScreen() {
 
         return (
             <View className="bg-white p-4 rounded-xl mb-4 shadow-sm border border-slate-100">
-                <Text className="text-lg font-bold text-slate-900 mb-1">{item.title}</Text>
-                {item.description && <Text className="text-slate-500 mb-3">{item.description}</Text>}
+                <Text className="text-lg font-bold text-slate-900 mb-3">{item.question}</Text>
 
                 <View className="space-y-3">
                     {item.options.map((opt: any) => {
@@ -64,10 +63,10 @@ export default function PollsScreen() {
                 </View>
                 <View className="mt-3 flex-row justify-between items-center">
                     <Text className="text-xs text-slate-400">Total Votes: {totalVotes}</Text>
-                    {item.is_anonymous && (
-                        <View className="bg-slate-100 px-2 py-1 rounded">
-                            <Text className="text-xs text-slate-500">Anonymous</Text>
-                        </View>
+                    {item.closes_at && (
+                        <Text className="text-xs text-slate-400">
+                            Closes: {new Date(item.closes_at).toLocaleDateString()}
+                        </Text>
                     )}
                 </View>
             </View>

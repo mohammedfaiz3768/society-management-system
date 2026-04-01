@@ -5,7 +5,8 @@ export interface NotificationItem {
     title: string;
     message: string;
     type: string;
-    read: boolean;
+    is_read: boolean;   // backend column is is_read
+    read_at: string | null;
     created_at: string;
 }
 
@@ -15,9 +16,10 @@ export const getNotifications = async (): Promise<NotificationItem[]> => {
 }
 
 export const markNotificationAsRead = async (id: number): Promise<void> => {
-    await apiClient.put(`/notifications/${id}/read`);
+    // backend route: PATCH /:id/read
+    await apiClient.patch(`/notifications/${id}/read`);
 }
 
-export const deleteNotification = async (id: number): Promise<void> => {
-    await apiClient.delete(`/notifications/${id}`);
+export const markAllNotificationsRead = async (): Promise<void> => {
+    await apiClient.patch('/notifications/mark-all-read');
 }

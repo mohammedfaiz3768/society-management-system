@@ -70,7 +70,7 @@ export default function GatePassesPage() {
             if (filterUsed !== "all") {
                 params.used = filterUsed === "used" ? "true" : "false";
             }
-            const res = await api.get('/gate-pass', { params });
+            const res = await api.get('/gate-pass/admin/all', { params });
             const data = res.data;
             setGatePasses(data.gatePasses ?? data ?? []);
             setTotalPages(data.pagination?.totalPages ?? 1);

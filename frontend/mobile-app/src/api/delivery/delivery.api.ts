@@ -14,6 +14,6 @@ export const createDeliveryPass = async (company: string, description?: string):
 }
 
 export const getMyDeliveries = async (): Promise<any[]> => {
-    const response = await apiClient.get<any[]>('/delivery/history');
+    const response = await apiClient.get<any[]>('/delivery/mine');
     return response.data;
 }

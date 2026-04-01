@@ -1,5 +1,4 @@
 import { apiClient } from '../client';
-import { z } from 'zod';
 
 export interface PollOption {
     id: number;
@@ -9,14 +8,10 @@ export interface PollOption {
 
 export interface Poll {
     id: number;
-    title: string;
-    description: string;
-    type: string;
-    is_anonymous: boolean;
-    end_date: string;
+    question: string;   // backend returns "question", not "title"
+    closes_at: string | null;
     created_at: string;
     options: PollOption[];
-    user_voted_option_id?: number | null; 
 }
 
 export const getActivePolls = async (): Promise<Poll[]> => {

@@ -13,9 +13,9 @@ import { Bell, BellOff } from "lucide-react";
 interface Notification {
     id: number;
     title: string;
-    body: string;
+    message: string;
     type: string;
-    read: boolean;
+    is_read: boolean;
     created_at: string;
 }
 
@@ -72,7 +72,7 @@ export default function NotificationsPage() {
         }
     };
 
-    const unreadCount = notifications.filter((n) => !n.read).length;
+    const unreadCount = notifications.filter((n) => !n.is_read).length;
 
     return (
         <div className="space-y-6">
@@ -109,30 +109,30 @@ export default function NotificationsPage() {
                         <div
                             key={n.id}
                             className={`flex items-start gap-4 p-4 rounded-lg border transition-colors ${
-                                n.read ? "bg-card" : "bg-blue-50 border-blue-100"
+                                n.is_read ? "bg-card" : "bg-blue-50 border-blue-100"
                             }`}
                         >
                             <div
                                 className={`mt-0.5 p-1.5 rounded-full ${
-                                    n.read ? "bg-muted" : "bg-blue-100"
+                                    n.is_read ? "bg-muted" : "bg-blue-100"
                                 }`}
                             >
                                 <Bell
                                     className={`h-4 w-4 ${
-                                        n.read ? "text-muted-foreground" : "text-blue-600"
+                                        n.is_read ? "text-muted-foreground" : "text-blue-600"
                                     }`}
                                 />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
                                     <p className="text-sm font-medium">{n.title}</p>
-                                    {!n.read && (
+                                    {!n.is_read && (
                                         <Badge className="text-[10px] px-1.5 py-0 bg-blue-600 text-white hover:bg-blue-600">
                                             New
                                         </Badge>
                                     )}
                                 </div>
-                                <p className="text-sm text-muted-foreground">{n.body}</p>
+                                <p className="text-sm text-muted-foreground">{n.message}</p>
                             </div>
                             <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 {new Date(n.created_at).toLocaleDateString()}

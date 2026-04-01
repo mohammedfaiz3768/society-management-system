@@ -1,13 +1,17 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getNotifications, markNotificationAsRead, deleteNotification, NotificationItem } from '../../src/api/notifications/notifications.api';
+import {
+    getNotifications,
+    markNotificationAsRead,
+    markAllNotificationsRead,
+    NotificationItem,
+} from '../../src/api/notifications/notifications.api';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function NotificationsScreen() {
-    const router = useRouter();
     const queryClient = useQueryClient();
 
     const { data: notifications, isLoading, refetch } = useQuery({
@@ -19,51 +23,55 @@ export default function NotificationsScreen() {
         mutationFn: markNotificationAsRead,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        }
+        },
     });
 
-    const deleteMutation = useMutation({
-        mutationFn: deleteNotification,
+    const readAllMutation = useMutation({
+        mutationFn: markAllNotificationsRead,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        }
+        },
     });
 
     const handlePress = (item: NotificationItem) => {
-        if (!item.read) {
+        if (!item.is_read) {
             readMutation.mutate(item.id);
         }
-        // Navigate based on type if needed, e.g. router.push(...)
     };
 
-    const handleDelete = (id: number) => {
-        deleteMutation.mutate(id);
-    };
+    const unreadCount = notifications?.filter(n => !n.is_read).length ?? 0;
 
     const renderItem = ({ item }: { item: NotificationItem }) => (
         <TouchableOpacity
             onPress={() => handlePress(item)}
-            className={`flex-row p-4 border-b border-slate-100 ${item.read ? 'bg-white' : 'bg-indigo-50'}`}
+            className={`flex-row p-4 border-b border-slate-100 ${item.is_read ? 'bg-white' : 'bg-indigo-50'}`}
         >
-            <View className={`h-10 w-10 rounded-full items-center justify-center mr-3 ${item.read ? 'bg-slate-100' : 'bg-indigo-100'}`}>
+            <View className={`h-10 w-10 rounded-full items-center justify-center mr-3 flex-shrink-0 ${item.is_read ? 'bg-slate-100' : 'bg-indigo-100'}`}>
                 <Ionicons
                     name={item.type === 'alert' ? 'alert' : 'notifications'}
                     size={20}
-                    color={item.read ? '#94a3b8' : '#4f46e5'}
+                    color={item.is_read ? '#94a3b8' : '#4f46e5'}
                 />
             </View>
             <View className="flex-1">
                 <View className="flex-row justify-between mb-1">
-                    <Text className={`text-sm font-bold ${item.read ? 'text-slate-700' : 'text-slate-900'}`}>{item.title}</Text>
-                    <Text className="text-xs text-slate-400">{new Date(item.created_at).toLocaleDateString()}</Text>
+                    <Text className={`text-sm font-bold flex-1 mr-2 ${item.is_read ? 'text-slate-700' : 'text-slate-900'}`}>
+                        {item.title}
+                    </Text>
+                    <Text className="text-xs text-slate-400 flex-shrink-0">
+                        {new Date(item.created_at).toLocaleDateString()}
+                    </Text>
                 </View>
-                <Text className={`text-sm ${item.read ? 'text-slate-500' : 'text-slate-800'}`} numberOfLines={2}>
+                <Text
+                    className={`text-sm ${item.is_read ? 'text-slate-500' : 'text-slate-800'}`}
+                    numberOfLines={2}
+                >
                     {item.message}
                 </Text>
             </View>
-            <TouchableOpacity onPress={() => handleDelete(item.id)} className="pl-2 justify-center">
-                <Ionicons name="close-circle-outline" size={20} color="#cbd5e1" />
-            </TouchableOpacity>
+            {!item.is_read && (
+                <View className="w-2 h-2 rounded-full bg-indigo-500 mt-1 ml-2 flex-shrink-0" />
+            )}
         </TouchableOpacity>
     );
 
@@ -71,7 +79,19 @@ export default function NotificationsScreen() {
         <SafeAreaView className="flex-1 bg-white">
             <Stack.Screen options={{ title: 'Notifications', headerShadowVisible: false }} />
 
-            {/* Header / Filter could go here */}
+            {unreadCount > 0 && (
+                <View className="flex-row justify-between items-center px-4 py-2 border-b border-slate-100">
+                    <Text className="text-sm text-slate-500">{unreadCount} unread</Text>
+                    <TouchableOpacity
+                        onPress={() => readAllMutation.mutate()}
+                        disabled={readAllMutation.isPending}
+                    >
+                        <Text className="text-sm text-indigo-600 font-semibold">
+                            {readAllMutation.isPending ? 'Marking...' : 'Mark all read'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             <FlatList
                 data={notifications}

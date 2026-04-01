@@ -82,6 +82,7 @@ exports.createGatePass = async (req, res) => {
 
 exports.getGatePasses = async (req, res) => {
   const userId = req.user.id;
+  const role = req.user.role;
   const societyId = req.societyId;
 
   const page = parseInt(req.query.page) || 1;
@@ -89,13 +90,24 @@ exports.getGatePasses = async (req, res) => {
   const offset = (page - 1) * limit;
 
   try {
-    const result = await pool.query(
-      `SELECT * FROM gate_passes
-             WHERE user_id = $1 AND society_id = $2
-             ORDER BY created_at DESC
-             LIMIT $3 OFFSET $4`,
-      [userId, societyId, limit, offset]
-    );
+    let result;
+    if (role === 'guard') {
+      result = await pool.query(
+        `SELECT * FROM gate_passes
+               WHERE society_id = $1
+               ORDER BY created_at DESC
+               LIMIT $2 OFFSET $3`,
+        [societyId, limit, offset]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT * FROM gate_passes
+               WHERE user_id = $1 AND society_id = $2
+               ORDER BY created_at DESC
+               LIMIT $3 OFFSET $4`,
+        [userId, societyId, limit, offset]
+      );
+    }
     return res.json(result.rows);
   } catch (err) {
     console.error("getGatePasses error:", err);

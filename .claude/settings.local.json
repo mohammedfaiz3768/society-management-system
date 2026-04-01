@@ -5,7 +5,26 @@
       "Bash(xargs grep:*)",
       "Bash(find c:/Users/khanf/society-backend/frontend/mobile-app/src/api -type f -name *.ts)",
       "Bash(find c:/Users/khanf/society-backend/src/controllers -name *.js)",
-      "Bash(grep -r \"TODO\\\\|FIXME\\\\|STUB\\\\|XXX\" c:/Users/khanf/society-backend/src --include=*.js)"
+      "Bash(grep -r \"TODO\\\\|FIXME\\\\|STUB\\\\|XXX\" c:/Users/khanf/society-backend/src --include=*.js)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/khanf/society-backend/**)",
+      "Bash(done)",
+      "Bash(ls -la /c/Users/khanf/society-backend/frontend/mobile-app/app/\\\\\\(resident\\\\\\)/)",
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(ls -la /c/Users/khanf/society-backend/frontend/mobile-app/app/\\\\\\(guard\\\\\\)/\\\\\\(tabs\\\\\\)/)",
+      "Bash(wc -l /c/Users/khanf/society-backend/frontend/admin-web/src/app/dashboard/*/*.tsx)",
+      "Bash(while read:*)",
+      "Bash(grep -r \"require.*undefined\\\\|require\\\\\\(.*\\\\.\\\\\\)\" /c/Users/khanf/society-backend/src --include=*.js)",
+      "Bash(find /c/Users/khanf/society-backend/frontend/mobile-app/app -type f -name *.tsx)",
+      "Bash(for file:*)",
+      "Bash(do)",
+      "Bash(if ! grep -q \"^\\\\s*const\\\\s\\\\+\\\\\\(pool\\\\|db\\\\\\)\\\\s*=\\\\s*require\" \"$file\")",
+      "Bash(then)",
+      "Bash(if grep:*)",
+      "Bash(grep -l \"disabled\\\\|TODO\\\\|STUB\\\\|placeholder\" /c/Users/khanf/society-backend/frontend/admin-web/src/app/dashboard/*/page.tsx)",
+      "Bash(grep -h \"from.*api\\\\|import.*api\" /c/Users/khanf/society-backend/frontend/mobile-app/app/\\\\\\(resident\\\\\\)/*.tsx)",
+      "Bash(find /c/Users/khanf/society-backend/frontend/mobile-app/app -name \"*.tsx\" -type f -exec grep -h \"from.*''''.*api\\\\|import.*''''.*api\" {})"
     ]
   }
 }

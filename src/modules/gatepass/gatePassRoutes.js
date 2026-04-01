@@ -21,7 +21,7 @@ router.use(authMiddleware);
 router.get("/admin/all", requireRole("admin"), getAllGatePassesAdmin);
 
 router.post("/create", requireRole("resident", "admin"), createGatePass);
-router.get("/", requireRole("resident", "admin"), getGatePasses);
+router.get("/", requireRole("resident", "guard", "admin"), getGatePasses);
 router.get("/:id", requireRole("resident", "guard", "admin"), getGatePassById);
 router.delete("/:id", requireRole("resident", "admin"), deleteGatePass);
 

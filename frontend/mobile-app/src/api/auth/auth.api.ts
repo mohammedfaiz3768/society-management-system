@@ -52,3 +52,8 @@ export async function getCurrentUser() {
     const response = await apiClient.get('/auth/me');
     return AuthResponseSchema.shape.user.parse(response.data.user);
 }
+
+export async function resendOtp(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post<{ message: string }>('/auth/resend-otp', { email });
+    return response.data;
+}

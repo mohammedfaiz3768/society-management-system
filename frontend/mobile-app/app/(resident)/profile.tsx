@@ -8,7 +8,7 @@ import { apiClient } from '../../src/api/client';
 
 export default function ProfileScreen() {
     const router = useRouter();
-    const { user, logout, token } = useAuthStore();
+    const { user, logout, updateUser } = useAuthStore();
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(user?.name || '');
     const [phone, setPhone] = useState(user?.phone || '');
@@ -17,21 +17,15 @@ export default function ProfileScreen() {
     const handleSave = async () => {
         setLoading(true);
         try {
-            // Assume backend has an update profile endpoint or user update
-            // For now, we'll try PUT /users/profile (not fully implemented in backend check, but standardized)
-            // Or PUT /users/:id 
-            // Let's defer to a simple alert if backend not ready, 
-            // but assuming standard endpoint:
-            await apiClient.put(`/users/${user?.id}`, { name, phone });
-
-            Alert.alert("Success", "Profile updated. Please login again to refresh details.", [
-                { text: "OK", onPress: () => logout() }
-            ]);
+            const res = await apiClient.put(`/users/${user?.id}`, { name, phone });
+            const updated = res.data;
+            updateUser({ ...user!, name: updated.name ?? name, phone: updated.phone ?? phone });
+            setIsEditing(false);
+            Alert.alert("Success", "Profile updated successfully.");
         } catch (err) {
             Alert.alert("Error", "Failed to update profile");
         } finally {
             setLoading(false);
-            setIsEditing(false);
         }
     };
 

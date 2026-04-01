@@ -15,17 +15,17 @@ export interface MyFlat {
 }
 
 export const getMyFlat = async (): Promise<MyFlat> => {
-    const response = await apiClient.get<MyFlat>('/flats/my');
+    const response = await apiClient.get<MyFlat>('/flats/mine');
     return response.data;
 }
 
 export const getFamilyMembers = async (): Promise<FlatMember[]> => {
-    const response = await apiClient.get<FlatMember[]>('/flats/my-members');
+    const response = await apiClient.get<FlatMember[]>('/flats/members/mine');
     return response.data;
 }
 
 export const addFamilyMember = async (flatId: number, name: string, phone: string, relation: string): Promise<FlatMember> => {
-    const response = await apiClient.post<FlatMember>('/flats/members', {
+    const response = await apiClient.post<FlatMember>('/flats/member', {
         flat_id: flatId,
         name,
         phone,

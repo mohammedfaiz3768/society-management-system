@@ -16,12 +16,12 @@ export interface Vehicle {
     color: string;
 }
 
-export const getMySlot = async (): Promise<ParkingSlot> => {
-    const response = await apiClient.get<ParkingSlot>('/parking/my-slot');
+export const getMySlot = async (): Promise<ParkingSlot | null> => {
+    const response = await apiClient.get<ParkingSlot | null>('/parking/slot/mine');
     return response.data;
 }
 
 export const getMyVehicles = async (): Promise<Vehicle[]> => {
-    const response = await apiClient.get<Vehicle[]>('/parking/my-vehicles');
+    const response = await apiClient.get<Vehicle[]>('/parking/vehicle/mine');
     return response.data;
 }

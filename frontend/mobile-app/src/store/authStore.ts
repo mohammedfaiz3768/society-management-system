@@ -14,6 +14,7 @@ interface AuthState {
     isLoading: boolean;
     login: (token: string, user: User) => void;
     logout: () => void;
+    updateUser: (user: User) => void;
     loadUser: () => Promise<void>;
 }
 
@@ -53,6 +54,9 @@ export const useAuthStore = create<AuthState>()(
             logout: () => {
                 console.log('[AuthStore] LOGOUT action called');
                 set({ token: null, user: null, userRole: null, societyId: null });
+            },
+            updateUser: (user) => {
+                set({ user });
             },
             loadUser: async () => {
                 return Promise.resolve();

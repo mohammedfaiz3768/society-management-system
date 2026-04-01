@@ -48,12 +48,11 @@ export default function GatePage() {
         setLoading(true);
         setError("");
         try {
-            // ✅ Correct endpoint matching backend routes
-            const res = await api.get('/gate-pass', {
+            const res = await api.get('/gate-pass/admin/all', {
                 params: { page: 1, limit: 50 }
             });
-            // ✅ Backend returns plain array
-            setGatePasses(Array.isArray(res.data) ? res.data : []);
+            const data = res.data;
+            setGatePasses(data.gatePasses ?? (Array.isArray(data) ? data : []));
         } catch {
             setError("Failed to fetch gate passes");
             setGatePasses([]);

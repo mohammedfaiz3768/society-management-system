@@ -1,3 +1,5 @@
+const pool = require("../../config/db");
+
 exports.getAllGatePassesAdmin = async (req, res) => {
     const societyId = req.societyId;
     const { page = 1, limit = 50, search = '', used = null, startDate = null, endDate = null } = req.query;
@@ -49,13 +51,13 @@ exports.getAllGatePassesAdmin = async (req, res) => {
         const result = await pool.query(
             `SELECT 
         gp.*,
-        u.username,
+        u.name AS username,
         u.email,
         f.flat_number,
         f.block
        FROM gate_passes gp
        LEFT JOIN users u ON gp.user_id = u.id
-       LEFT JOIN flats f ON u.flat_id = f.id
+       LEFT JOIN flats f ON u.flat_number = f.flat_number AND f.society_id = gp.society_id
        ${whereClause}
        ORDER BY gp.created_at DESC
        LIMIT $${paramCounter} OFFSET $${paramCounter + 1}`,

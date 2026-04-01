@@ -105,7 +105,7 @@ export default function GuardScanScreen() {
     // Show verification result
     if (verificationResult) {
         const { gatePass, isValid, reason } = verificationResult;
-        const canMarkEntry = isValid && gatePass.status === 'APPROVED';
+        const canMarkEntry = isValid && gatePass.status === 'PENDING';
         const canMarkExit = isValid && gatePass.status === 'ENTERED';
 
         return (
@@ -126,19 +126,21 @@ export default function GuardScanScreen() {
                     <View className="p-6">
                         <View className="bg-slate-50 rounded-xl p-4 mb-6">
                             <View className="mb-3">
-                                <Text className="text-xs text-slate-500 uppercase mb-1">Guest Name</Text>
-                                <Text className="text-2xl font-bold text-slate-900">{gatePass.guest_name}</Text>
+                                <Text className="text-xs text-slate-500 uppercase mb-1">Visitor Name</Text>
+                                <Text className="text-2xl font-bold text-slate-900">{gatePass.visitor_name}</Text>
                             </View>
 
                             <View className="mb-3">
                                 <Text className="text-xs text-slate-500 uppercase mb-1">Phone</Text>
-                                <Text className="text-lg text-slate-900">{gatePass.guest_phone || 'N/A'}</Text>
+                                <Text className="text-lg text-slate-900">{gatePass.visitor_phone || 'N/A'}</Text>
                             </View>
 
+                            {gatePass.purpose && (
                             <View className="mb-3">
-                                <Text className="text-xs text-slate-500 uppercase mb-1">Type</Text>
-                                <Text className="text-lg text-slate-900">{gatePass.type}</Text>
+                                <Text className="text-xs text-slate-500 uppercase mb-1">Purpose</Text>
+                                <Text className="text-lg text-slate-900">{gatePass.purpose}</Text>
                             </View>
+                            )}
 
                             {gatePass.vehicle_number && (
                                 <View className="mb-3">
