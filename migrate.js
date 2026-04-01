@@ -17,12 +17,15 @@ const pool = new Pool({
 const migrations = [
     '00_base_schema.sql',          // Creates all base tables
     '01_add_notifications_table.sql', // Adds notifications table
+    '04_add_missing_tables.sql',    // flat_members, visitor_parking, service_requests
     'add_multi_tenant_schema.sql',  // Adds columns (will skip if exists)
     'add_society_registration.sql', // Adds registration fields
     'add_email_to_otp_codes.sql',  // Adds email to OTP
     'create_invitations_table.sql', // Creates invitations (will skip if exists)
     'create_gate_passes_table.sql', // Creates gate passes (will skip if exists)
-    'add_sos_enhancements.sql'      // SOS enhancements
+    'add_sos_enhancements.sql',     // SOS enhancements
+    '02_add_number_of_people_to_gate_passes.sql', // Gate pass people count
+    '03_fix_polls_schema.sql',      // Polls schema fixes
 ];
 
 async function runMigrations() {

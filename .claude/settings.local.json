@@ -24,7 +24,9 @@
       "Bash(if grep:*)",
       "Bash(grep -l \"disabled\\\\|TODO\\\\|STUB\\\\|placeholder\" /c/Users/khanf/society-backend/frontend/admin-web/src/app/dashboard/*/page.tsx)",
       "Bash(grep -h \"from.*api\\\\|import.*api\" /c/Users/khanf/society-backend/frontend/mobile-app/app/\\\\\\(resident\\\\\\)/*.tsx)",
-      "Bash(find /c/Users/khanf/society-backend/frontend/mobile-app/app -name \"*.tsx\" -type f -exec grep -h \"from.*''''.*api\\\\|import.*''''.*api\" {})"
+      "Bash(find /c/Users/khanf/society-backend/frontend/mobile-app/app -name \"*.tsx\" -type f -exec grep -h \"from.*''''.*api\\\\|import.*''''.*api\" {})",
+      "Bash(node migrate.js)",
+      "Bash(node -e \":*)"
     ]
   }
 }

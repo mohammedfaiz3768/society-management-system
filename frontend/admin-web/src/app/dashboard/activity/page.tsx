@@ -38,7 +38,7 @@ export default function ActivityPage() {
         setIsLoading(true);
         setFetchError("");
         try {
-            const res = await api.get(`/timeline?limit=${LIMIT}`);
+            const res = await api.get(`/timeline/global?limit=${LIMIT}`);
             setActivities(res.data);
         } catch (err) {
             if (axios.isAxiosError(err)) {

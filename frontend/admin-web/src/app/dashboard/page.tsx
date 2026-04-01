@@ -48,8 +48,8 @@ export default function DashboardPage() {
         const fetchAll = async () => {
             try {
                 const [statsRes, activityRes] = await Promise.all([
-                    api.get('/dashboard/admin-stats'),
-                    api.get('/timeline?limit=5'),
+                    api.get('/dashboard/admin'),
+                    api.get('/timeline/global?limit=5'),
                 ]);
                 setStats(statsRes.data);
                 setActivity(activityRes.data);
