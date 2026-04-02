@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect x="0" y="0" width="512" height="512" rx="110" fill="#6366F1"/>
+
+  <!-- U Shape -->
+  <path d="M128 149 L128 320 Q128 384 192 384 L320 384 Q384 384 384 320 L384 149" fill="none" stroke="white" stroke-width="52" stroke-linecap="round"/>
+
+  <!-- Building Windows -->
+  <rect x="179" y="192" width="43" height="43" rx="8" fill="white" opacity="0.7"/>
+  <rect x="290" y="192" width="43" height="43" rx="8" fill="white" opacity="0.7"/>
+  <rect x="179" y="264" width="43" height="43" rx="8" fill="white" opacity="0.7"/>
+  <rect x="290" y="264" width="43" height="43" rx="8" fill="white" opacity="0.7"/>
+</svg>

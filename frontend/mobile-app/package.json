@@ -48,6 +48,7 @@
     "@types/react": "~19.1.0",
     "autoprefixer": "^10.4.23",
     "babel-preset-expo": "^54.0.9",
+    "sharp": "^0.34.5",
     "typescript": "~5.9.2"
   },
   "private": true

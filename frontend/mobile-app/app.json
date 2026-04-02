@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "resident-app",
-    "slug": "resident-app",
+    "name": "Society App",
+    "slug": "society-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,26 +9,37 @@
     "newArchEnabled": true,
     "plugins": [
       "expo-font",
-      "expo-router"
+      "expo-router",
+      "expo-notifications"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#6366F1"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.societyapp.resident"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#6366F1"
       },
+      "package": "com.societyapp.resident",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "70f74f26-b8dd-4ada-b5f9-db797c2bd3b1"
+      }
+    },
+    "owner": "mohdfaiz11"
   }
 }
