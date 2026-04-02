@@ -26,6 +26,7 @@ const migrations = [
     'add_sos_enhancements.sql',     // SOS enhancements
     '02_add_number_of_people_to_gate_passes.sql', // Gate pass people count
     '03_fix_polls_schema.sql',      // Polls schema fixes
+    '05_fix_schema_mismatches.sql', // Fix column/table name mismatches
 ];
 
 async function runMigrations() {

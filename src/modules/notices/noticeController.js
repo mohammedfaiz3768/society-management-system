@@ -38,7 +38,7 @@ exports.createNotice = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO notices (title, content, category, created_by, society_id, pinned, audience)
+      `INSERT INTO notices (title, message, category, created_by, society_id, pinned, target_audience)
              VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING *`,
       [title, content, category || "general", createdBy, societyId, pinned || false, audience || "all"]
@@ -73,11 +73,11 @@ exports.getAllNotices = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT n.*, u.name AS created_by_name
+      `SELECT n.*, n.message AS content, n.target_audience AS audience, u.name AS created_by_name
              FROM notices n
              LEFT JOIN users u ON n.created_by = u.id
              WHERE n.society_id = $1
-               AND ($2 = 'admin' OR n.audience = 'all' OR n.audience = $2)
+               AND ($2 = 'admin' OR n.target_audience = 'all' OR n.target_audience = $2)
              ORDER BY n.pinned DESC, n.created_at DESC
              LIMIT $3 OFFSET $4`,
       [societyId, role, limit, offset]
@@ -98,12 +98,12 @@ exports.getNoticeById = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT n.*, u.name AS created_by_name
+      `SELECT n.*, n.message AS content, n.target_audience AS audience, u.name AS created_by_name
              FROM notices n
              LEFT JOIN users u ON n.created_by = u.id
              WHERE n.id = $1
                AND n.society_id = $2
-               AND ($3 = 'admin' OR n.audience = 'all' OR n.audience = $3)`,
+               AND ($3 = 'admin' OR n.target_audience = 'all' OR n.target_audience = $3)`,
       [id, societyId, role]
     );
 
@@ -146,18 +146,17 @@ exports.updateNotice = async (req, res) => {
 
     const updated = await pool.query(
       `UPDATE notices
-             SET title    = $1,
-                 content  = $2,
-                 pinned   = $3,
-                 audience = $4,
-                 updated_at = NOW()
+             SET title           = $1,
+                 message         = $2,
+                 pinned          = $3,
+                 target_audience = $4
              WHERE id = $5 AND society_id = $6
-             RETURNING *`,
+             RETURNING *, message AS content, target_audience AS audience`,
       [
         title ?? old.rows[0].title,
-        content ?? old.rows[0].content,
+        content ?? old.rows[0].message,
         pinned ?? old.rows[0].pinned,
-        audience ?? old.rows[0].audience,
+        audience ?? old.rows[0].target_audience,
         id,
         societyId,
       ]

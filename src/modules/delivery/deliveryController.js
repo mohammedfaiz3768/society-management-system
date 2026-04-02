@@ -124,7 +124,7 @@ exports.deliveryEntry = async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO delivery_logs
-             (delivery_person, company, purpose, flat_number, guard_id, pass_code, preapproved, society_id)
+             (delivery_person, company, item_description, flat_number, guard_id, pass_code, preapproved, society_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING *`,
       [delivery_person, company || null, purpose || null, flat_number, guardId, pass_code || null, preapproved, societyId]
@@ -213,7 +213,7 @@ exports.getMyDeliveries = async (req, res) => {
     const logs = await pool.query(
       `SELECT * FROM delivery_logs
              WHERE flat_number=$1 AND society_id=$2
-             ORDER BY in_time DESC
+             ORDER BY entry_time DESC
              LIMIT $3 OFFSET $4`,
       [flat, societyId, limit, offset]
     );

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/dev/null grep:*)",
+      "Bash(curl -s -H \"Authorization: Bearer $TOKEN\" http://localhost:10000/api/dashboard/admin)",
+      "Bash(curl -s -H \"Authorization: Bearer $TOKEN\" http://localhost:10000/api/parking/slots)",
+      "Bash(head -10 echo \"---\" grep \"getAdminStats error\\\\|dashboard/admin\" /tmp/backend.log)",
+      "Bash(netstat -ano)",
+      "Bash(cmd //c \"taskkill /PID 25704 /F\")",
+      "Bash(grep -o '`[^`]*`\\\\|\"\"\"\"[^\"\"\"\"]*\"\"\"\"\\\\|'\"''''\"'[^'\"''''\"']*'\"''''\")",
+      "Read(//c//**)",
+      "Bash(cat c:/Users/khanf/society-backend/frontend/mobile-app/src/api/gatepass/gatepass.api.ts echo \"---\" grep -r \"visitors\\\\|delivery/logs\\\\|parking/visitor\" c:/Users/khanf/society-backend/frontend/mobile-app/src/api --include=\"*.ts\" -n)",
+      "Bash(curl -s http://localhost:10000/api/health)",
+      "Bash(curl -s http://localhost:10000/api/auth/me)",
+      "Bash(head -10 echo \"---\" grep -r \"timeline\\\\|delivery\" c:/Users/khanf/society-backend/src/server.js)",
+      "Bash(__NEW_LINE_e2a279559b7f61fe__ ls:*)",
+      "Bash(curl -s -H \"Authorization: Bearer $RT\" http://localhost:10000/api/directory/residents echo \"\" grep \"directory\\\\|Directory\" /tmp/backend4.log)",
+      "Read(//c/Users/khanf/society-backend/**)",
+      "Bash(tail -3 echo --- grep -n \"residents\\\\|GET /\" c:/Users/khanf/society-backend/src/modules/users/userRoutes.js)",
+      "Bash(head -10 echo \"---\" grep -n \"events\\\\|delivery\" c:/Users/khanf/society-backend/src/app.js)",
+      "Bash(curl -s -H \"Authorization: Bearer $AT\" http://localhost:10000/api/users/residents echo \"\" cat c:/Users/khanf/society-backend/src/app.js)",
+      "Bash(head -5 grep -rn \"put\\\\|patch\\\\|router\" c:/Users/khanf/society-backend/src/modules/complaints/ --include=\"*.js\")"
+    ]
+  }
+}

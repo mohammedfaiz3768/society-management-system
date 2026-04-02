@@ -110,7 +110,7 @@ exports.getAllRequests = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT sr.*, u.name AS user_name, u.phone AS user_phone, s.name AS staff_name
+      `SELECT sr.*, u.name AS user_name, u.phone AS user_phone, s.staff_name
              FROM service_requests sr
              LEFT JOIN users u ON sr.user_id = u.id
              LEFT JOIN staff s ON sr.assigned_to = s.id

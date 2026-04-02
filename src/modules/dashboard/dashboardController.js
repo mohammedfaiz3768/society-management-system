@@ -32,10 +32,10 @@ exports.getAdminStats = async (req, res) => {
       pool.query("SELECT COUNT(*) FROM complaints WHERE status != 'resolved' AND society_id=$1", [societyId]),
       pool.query("SELECT COUNT(*) FROM service_requests WHERE status != 'completed' AND society_id=$1", [societyId]),
       pool.query("SELECT COUNT(*) FROM emergency_alerts WHERE status != 'resolved' AND society_id=$1", [societyId]),
-      pool.query("SELECT COUNT(*) FROM events WHERE date >= CURRENT_DATE AND society_id=$1", [societyId]),
-      pool.query("SELECT COUNT(*) FROM visitors WHERE DATE(in_time) = CURRENT_DATE AND society_id=$1", [societyId]),
+      pool.query("SELECT COUNT(*) FROM events WHERE event_date >= CURRENT_DATE AND society_id=$1", [societyId]),
+      pool.query("SELECT COUNT(*) FROM visitors WHERE DATE(COALESCE(in_time, created_at)) = CURRENT_DATE AND society_id=$1", [societyId]),
       pool.query("SELECT COUNT(*) FROM visitor_parking WHERE DATE(in_time) = CURRENT_DATE AND society_id=$1", [societyId]),
-      pool.query("SELECT COUNT(*) FROM polls WHERE (end_date IS NULL OR end_date >= NOW()) AND society_id=$1", [societyId]),
+      pool.query("SELECT COUNT(*) FROM polls WHERE (expires_at IS NULL OR expires_at >= NOW()) AND society_id=$1", [societyId]),
       pool.query("SELECT COUNT(*) FROM documents WHERE society_id=$1", [societyId]),
       pool.query("SELECT COUNT(*) FROM announcements WHERE society_id=$1", [societyId]),
     ]);
@@ -98,7 +98,7 @@ exports.getResidentStats = async (req, res) => {
       ),
       pool.query(
         `SELECT COUNT(*) FROM visitors
-                 WHERE resident_id=$1 AND DATE(in_time) = CURRENT_DATE`,
+                 WHERE user_id=$1 AND DATE(COALESCE(in_time, created_at)) = CURRENT_DATE`,
         [userId]
       ),
       pool.query(
@@ -108,8 +108,8 @@ exports.getResidentStats = async (req, res) => {
       ),
       pool.query(
         `SELECT * FROM events
-                 WHERE date >= CURRENT_DATE AND society_id=$1
-                 ORDER BY date ASC, start_time ASC
+                 WHERE event_date >= CURRENT_DATE AND society_id=$1
+                 ORDER BY event_date ASC
                  LIMIT 5`,
         [societyId]
       ),
@@ -155,7 +155,7 @@ exports.getGuardStats = async (req, res) => {
     ] = await Promise.all([
       pool.query(
         `SELECT COUNT(*) FROM visitors
-                 WHERE guard_id=$1 AND DATE(in_time) = CURRENT_DATE`,
+                 WHERE guard_id=$1 AND DATE(COALESCE(in_time, created_at)) = CURRENT_DATE`,
         [guardId]
       ),
       pool.query(

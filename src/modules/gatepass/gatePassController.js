@@ -5,7 +5,7 @@ const crypto = require("crypto");
 exports.createGatePass = async (req, res) => {
   const userId = req.user.id;
   const societyId = req.societyId;
-  const { visitor_name, visitor_phone, vehicle_number, purpose, valid_to, number_of_people } = req.body;
+  const { visitor_name, visitor_phone, vehicle_number, purpose, valid_to, valid_from, number_of_people, type } = req.body;
 
   if (!visitor_name) {
     return res.status(400).json({ message: "visitor_name is required" });
@@ -53,12 +53,14 @@ exports.createGatePass = async (req, res) => {
     const qr_code = crypto.randomBytes(32).toString("hex");
     const numPeople = number_of_people && number_of_people > 0 ? number_of_people : 1;
 
+    const validFromDate = valid_from ? new Date(valid_from) : new Date();
+
     const result = await pool.query(
       `INSERT INTO gate_passes
-             (user_id, visitor_name, visitor_phone, vehicle_number, purpose, qr_code, valid_until, society_id, number_of_people)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+             (user_id, visitor_name, visitor_phone, vehicle_number, purpose, qr_code, valid_until, valid_from, type, society_id, number_of_people)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
              RETURNING *`,
-      [userId, visitor_name, visitor_phone || "", vehicle_number || "", purpose || "", qr_code, validToDate, societyId, numPeople]
+      [userId, visitor_name, visitor_phone || "", vehicle_number || "", purpose || "", qr_code, validToDate, validFromDate, type || "Visitor", societyId, numPeople]
     );
 
     const gatePass = result.rows[0];

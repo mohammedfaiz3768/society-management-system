@@ -26,7 +26,14 @@
       "Bash(grep -h \"from.*api\\\\|import.*api\" /c/Users/khanf/society-backend/frontend/mobile-app/app/\\\\\\(resident\\\\\\)/*.tsx)",
       "Bash(find /c/Users/khanf/society-backend/frontend/mobile-app/app -name \"*.tsx\" -type f -exec grep -h \"from.*''''.*api\\\\|import.*''''.*api\" {})",
       "Bash(node migrate.js)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(head -10 grep -n \"api.get\\\\|api.post\\\\|api.put\\\\|api.delete\" c:/Users/khanf/society-backend/frontend/admin-web/src/app/dashboard/sos/page.tsx)",
+      "Bash(head -10 grep -n \"api.get\\\\|api.post\\\\|api.put\\\\|api.delete\" c:/Users/khanf/society-backend/frontend/admin-web/src/app/dashboard/notices/page.tsx)",
+      "Bash(grep -r \"getAllDeliveries\\\\|deliveries\" c:/Users/khanf/society-backend/src/modules/delivery/ --include=*.js -n)",
+      "Bash(node -e \"require\\(''dotenv''\\).config\\(\\); const pool = require\\(''./src/config/db''\\);:*)",
+      "Bash(curl -s -X POST http://localhost:10000/api/auth/admin/login -H \"Content-Type: application/json\" -d '{\"\"\"\"email\"\"\"\":\"\"\"\"admin@societyapp.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"Admin@123\"\"\"\"}')",
+      "Bash(grep -r \"admin/login\\\\|/login\" c:/Users/khanf/society-backend/src --include=*.js -l)",
+      "Bash(bash:*)"
     ]
   }
 }

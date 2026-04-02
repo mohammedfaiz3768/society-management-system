@@ -17,8 +17,8 @@ exports.addStaff = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `INSERT INTO staff (name, phone, role, shift_start, shift_end, society_id)
-             VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO staff (staff_name, name, phone, staff_role, role, shift_start, shift_end, society_id)
+             VALUES ($1, $1, $2, $3, $3, $4, $5, $6)
              RETURNING *`,
       [name, phone || "", role, shift_start || null, shift_end || null, societyId]
     );
@@ -102,7 +102,8 @@ exports.updateStaff = async (req, res) => {
 
     const updated = await pool.query(
       `UPDATE staff
-             SET name=$1, phone=$2, role=$3, shift_start=$4, shift_end=$5, status=$6
+             SET staff_name=$1, name=$1, phone=$2, staff_role=$3, role=$3,
+                 shift_start=$4, shift_end=$5, status=$6
              WHERE id=$7 AND society_id=$8
              RETURNING *`,
       [
@@ -135,7 +136,7 @@ exports.deleteStaff = async (req, res) => {
 
   try {
     const result = await pool.query(
-      "DELETE FROM staff WHERE id=$1 AND society_id=$2 RETURNING id, name",
+      "DELETE FROM staff WHERE id=$1 AND society_id=$2 RETURNING id, staff_name AS name",
       [id, societyId]
     );
 
@@ -347,7 +348,7 @@ exports.getResidentStaff = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT sa.*, s.name, s.phone, s.role
+      `SELECT sa.*, s.staff_name AS name, s.phone, s.staff_role AS role
              FROM staff_assignments sa
              JOIN staff s ON sa.staff_id = s.id
              WHERE sa.resident_id=$1 AND s.society_id=$2`,

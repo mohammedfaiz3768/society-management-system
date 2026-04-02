@@ -13,13 +13,10 @@ exports.getResidentDirectory = async (req, res) => {
       `SELECT
                 u.id,
                 u.name,
-                -- ✅ Only admins see phone numbers — residents get NULL
                 CASE WHEN $2 = 'admin' THEN u.phone ELSE NULL END AS phone,
                 u.flat_number,
                 u.block,
-                u.floor,
                 u.role,
-                -- ✅ Fixed subquery to match flat_members schema
                 (SELECT COUNT(*) FROM flat_members fm
                  JOIN flats f ON fm.flat_id = f.id
                  WHERE f.flat_number = u.flat_number
@@ -27,7 +24,7 @@ exports.getResidentDirectory = async (req, res) => {
              FROM users u
              WHERE u.role IN ('resident', 'admin')
                AND u.society_id = $1
-             ORDER BY u.block ASC, u.floor ASC, u.flat_number ASC
+             ORDER BY u.block ASC, u.flat_number ASC
              LIMIT $3 OFFSET $4`,
       [societyId, role, limit, offset]
     );
@@ -83,7 +80,6 @@ exports.searchDirectory = async (req, res) => {
                 CASE WHEN $3 = 'admin' THEN u.phone ELSE NULL END AS phone,
                 u.flat_number,
                 u.block,
-                u.floor,
                 u.role
              FROM users u
              WHERE (LOWER(u.name) LIKE LOWER($1) OR LOWER(u.flat_number) LIKE LOWER($1))

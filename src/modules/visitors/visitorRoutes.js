@@ -18,6 +18,6 @@ router.post("/", requireRole("guard", "admin"), createVisitor);
 router.put("/approve/:id", requireRole("resident", "admin"), approveVisitor);
 router.put("/exit/:id", requireRole("guard", "admin"), markExit);
 router.get("/mine", requireRole("resident", "admin"), getResidentVisitors);
-router.get("/", requireRole("admin"), getAllVisitors);
+router.get("/", requireRole("guard", "admin"), getAllVisitors);
 
 module.exports = router;

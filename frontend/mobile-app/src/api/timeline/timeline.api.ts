@@ -10,6 +10,6 @@ export interface ActivityItem {
 }
 
 export const getMyTimeline = async (): Promise<ActivityItem[]> => {
-    const response = await apiClient.get<ActivityItem[]>('/timeline/my');
+    const response = await apiClient.get<ActivityItem[]>('/timeline/me');
     return response.data;
 }

@@ -28,6 +28,6 @@ router.post("/vehicle", requireRole("resident", "admin"), addVehicle);
 router.get("/vehicle/mine", requireRole("resident", "admin"), getMyVehicles);
 router.post("/visitor", requireRole("guard", "admin"), addVisitorVehicle);
 router.put("/visitor/:id/exit", requireRole("guard", "admin"), exitVisitorVehicle);
-router.get("/visitor/logs", requireRole("admin"), getVisitorLogs);
+router.get("/visitor/logs", requireRole("guard", "admin"), getVisitorLogs);
 
 module.exports = router;
