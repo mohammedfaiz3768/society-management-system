@@ -39,7 +39,7 @@ export default function ActivityPage() {
         setFetchError("");
         try {
             const res = await api.get(`/timeline/global?limit=${LIMIT}`);
-            setActivities(res.data);
+            setActivities(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 setFetchError(err.response?.data?.message || "Failed to load activity log");
@@ -56,6 +56,7 @@ export default function ActivityPage() {
     }, [user]);
 
     const getIcon = (type: string) => {
+        if (!type) return <FileText className="h-5 w-5 text-slate-500" />;
         if (type.includes("poll")) return <Activity className="h-5 w-5 text-purple-500" />;
         if (type.includes("bill")) return <CreditCard className="h-5 w-5 text-green-500" />;
         if (type.includes("complaint")) return <AlertCircle className="h-5 w-5 text-red-500" />;
