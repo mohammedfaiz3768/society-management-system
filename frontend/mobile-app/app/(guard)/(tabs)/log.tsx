@@ -1,13 +1,24 @@
-import React from 'react';
-import { View, Text, FlatList, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, FlatList, RefreshControl, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
-import { getGatePasses } from '../../../src/api/gatepass/gatepass.api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getGatePasses, markExit } from '../../../src/api/gatepass/gatepass.api';
 
 export default function GuardLogScreen() {
+    const queryClient = useQueryClient();
     const { data: passes, isLoading, refetch } = useQuery({
         queryKey: ['gate-passes', 'history'],
         queryFn: () => getGatePasses(),
+    });
+
+    const exitMutation = useMutation({
+        mutationFn: (id: number) => markExit(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['gate-passes'] });
+        },
+        onError: () => {
+            Alert.alert('Error', 'Failed to mark exit. Please try again.');
+        },
     });
 
     // Show passes that have had activity (entered or exited)
@@ -38,6 +49,15 @@ export default function GuardLogScreen() {
                 <Text className="text-red-500 text-xs">
                     Out: {new Date(item.exit_time).toLocaleTimeString()}
                 </Text>
+            )}
+            {item.status === 'ENTERED' && (
+                <TouchableOpacity
+                    onPress={() => exitMutation.mutate(item.id)}
+                    disabled={exitMutation.isPending}
+                    className="mt-3 bg-red-500 py-2 rounded-lg items-center"
+                >
+                    <Text className="text-white text-sm font-bold">Mark Exit</Text>
+                </TouchableOpacity>
             )}
         </View>
     );

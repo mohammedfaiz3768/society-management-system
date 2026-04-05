@@ -235,10 +235,55 @@ exports.saveFcmToken = async (req, res) => {
 
 
 exports.resendOtp = async (req, res) => {
-  const { phone } = req.body;
+  const { phone, email } = req.body;
 
+  // Email-based resend (used by mobile app)
+  if (email) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      const recentOtp = await pool.query(
+        `SELECT * FROM otp_codes WHERE email = $1 ORDER BY id DESC LIMIT 1`,
+        [normalizedEmail]
+      );
+
+      if (recentOtp.rows.length > 0) {
+        const lastSent = new Date(recentOtp.rows[0].created_at).getTime();
+        const diff = Date.now() - lastSent;
+        if (diff < 60 * 1000) {
+          const wait = Math.ceil((60 * 1000 - diff) / 1000);
+          return res.status(429).json({ message: `Please wait ${wait}s before requesting another OTP.` });
+        }
+      }
+
+      const otp = generateOtp();
+      const otpHash = hashOtp(otp);
+
+      await pool.query(`DELETE FROM otp_codes WHERE email = $1`, [normalizedEmail]);
+      await pool.query(
+        `INSERT INTO otp_codes (email, code, expires_at, created_at)
+         VALUES ($1, $2, NOW() + INTERVAL '5 minutes', NOW())`,
+        [normalizedEmail, otpHash]
+      );
+
+      if (process.env.NODE_ENV !== "never") {
+        console.log(`[DEV] RESEND EMAIL OTP for ${normalizedEmail}: ${otp}`);
+      }
+
+      sendEmail(normalizedEmail, "Your Login OTP (Resent)", otp).catch((err) =>
+        console.error("Email resend failed:", err.message)
+      );
+
+      return res.json({ message: "OTP resent successfully" });
+    } catch (err) {
+      console.error("resendOtp (email) error:", err);
+      return res.status(500).json({ message: "Server error" });
+    }
+  }
+
+  // Phone-based resend
   if (!phone) {
-    return res.status(400).json({ message: "Phone is required" });
+    return res.status(400).json({ message: "Phone or email is required" });
   }
 
   try {

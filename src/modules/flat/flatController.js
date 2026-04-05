@@ -191,9 +191,10 @@ exports.addFlatMember = async (req, res) => {
 
   try {
     const flatCheck = await pool.query(
-      `SELECT id FROM flats
-             WHERE id=$1 AND society_id=$2
-               AND ($3='admin' OR owner_id=$4)`,
+      `SELECT f.id FROM flats f
+             LEFT JOIN users u ON u.flat_number = f.flat_number AND u.society_id = f.society_id
+             WHERE f.id=$1 AND f.society_id=$2
+               AND ($3='admin' OR f.owner_id=$4 OR u.id=$4)`,
       [flat_id, societyId, req.user.role, addedBy]
     );
 

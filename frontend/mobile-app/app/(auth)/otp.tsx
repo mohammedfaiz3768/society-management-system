@@ -75,7 +75,7 @@ export default function OtpScreen() {
 
         if (index === 5 && value && newOtp.every(digit => digit !== '')) {
             const fullCode = newOtp.join('');
-            if (fullCode.length === 6) {
+            if (fullCode.length === 6 && !verifyOtpMutation.isPending) {
                 Keyboard.dismiss();
                 verifyOtpMutation.mutate(fullCode);
             }

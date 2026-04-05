@@ -9,31 +9,37 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 export default function NoticesScreen() {
     const router = useRouter();
-    const { data: list, isLoading } = useQuery({
+    const { data: rawList, isLoading } = useQuery({
         queryKey: ['announcements'],
         queryFn: getAnnouncements,
     });
+    const list = Array.isArray(rawList) ? rawList : [];
 
-    const renderItem = ({ item }: { item: any }) => (
+    const renderItem = ({ item }: { item: any }) => {
+        const type = item.type || 'general';
+        const isEmergency = type === 'emergency' || type === 'urgent';
+        const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : '';
+        return (
         <View className="bg-white p-5 rounded-2xl mb-4 shadow-sm border border-slate-100">
             <View className="flex-row justify-between mb-3">
-                <View className={`px-3 py-1 rounded-full ${item.type === 'emergency' ? 'bg-red-100' : 'bg-indigo-50'}`}>
-                    <Text className={`text-xs font-bold uppercase ${item.type === 'emergency' ? 'text-red-700' : 'text-indigo-600'}`}>
-                        {item.type}
+                <View className={`px-3 py-1 rounded-full ${isEmergency ? 'bg-red-100' : 'bg-indigo-50'}`}>
+                    <Text className={`text-xs font-bold uppercase ${isEmergency ? 'text-red-700' : 'text-indigo-600'}`}>
+                        {type}
                     </Text>
                 </View>
-                <Text className="text-slate-400 text-xs font-medium">{new Date(item.created_at).toLocaleDateString()}</Text>
+                <Text className="text-slate-400 text-xs font-medium">{dateStr}</Text>
             </View>
-            <Text className="text-lg font-bold text-slate-900 mb-2 leading-tight">{item.title}</Text>
-            <Text className="text-slate-600 leading-relaxed text-sm">{item.message}</Text>
+            <Text className="text-lg font-bold text-slate-900 mb-2 leading-tight">{item.title || ''}</Text>
+            <Text className="text-slate-600 leading-relaxed text-sm">{item.message || ''}</Text>
             <View className="mt-4 pt-3 border-t border-slate-50 flex-row items-center">
                 <View className="w-6 h-6 bg-slate-200 rounded-full items-center justify-center mr-2">
                     <Ionicons name="person" size={12} color="#64748b" />
                 </View>
-                <Text className="text-slate-400 text-xs font-medium">By {item.admin_name}</Text>
+                <Text className="text-slate-400 text-xs font-medium">By {item.admin_name || 'Admin'}</Text>
             </View>
         </View>
-    );
+        );
+    };
 
     return (
         <View className="flex-1 bg-slate-50">
@@ -64,7 +70,7 @@ export default function NoticesScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={list}
+                    data={list as any[]}
                     renderItem={renderItem}
                     keyExtractor={item => item.id.toString()}
                     contentContainerStyle={{ padding: 16 }}
