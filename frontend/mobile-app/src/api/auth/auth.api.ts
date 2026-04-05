@@ -13,12 +13,12 @@ export const VerifyOtpSchema = z.object({
 export const AuthResponseSchema = z.object({
     token: z.string(),
     user: z.object({
-        id: z.number(), 
+        id: z.number(),
         email: z.string().email(),
         role: z.enum(['resident', 'guard', 'admin']),
-        name: z.string().optional(),
-        phone: z.string().optional(),
-        flat_number: z.string().optional(),
+        name: z.string().nullish(),
+        phone: z.string().nullish(),
+        flat_number: z.string().nullish(),
     }),
 });
 
