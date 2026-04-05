@@ -28,8 +28,9 @@
       },
       "package": "com.societyapp.resident",
       "versionCode": 1,
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "edgeToEdgeEnabled": false,
+      "predictiveBackGestureEnabled": false,
+      "minSdkVersion": 26
     },
     "web": {
       "favicon": "./assets/favicon.png"
