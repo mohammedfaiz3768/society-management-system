@@ -406,8 +406,37 @@ exports.requestOtpByEmail = async (req, res) => {
 
     let userResult = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
 
+    if (authConfig.isAdminOnly() && userResult.rows.length === 0) {
+      return res.status(403).json({ message: "Please contact your administrator to create an account." });
+    }
+
+    if (authConfig.isInvitationOnly() && userResult.rows.length === 0) {
+      if (!invitationCode) {
+        return res.status(403).json({ message: "Invitation code required for new registrations." });
+      }
+
+      const invitationResult = await pool.query(
+        `SELECT * FROM invitations
+         WHERE code = $1
+           AND used = FALSE
+           AND (expires_at IS NULL OR expires_at > NOW())
+           AND (email IS NULL OR email = $2)`,
+        [invitationCode, email]
+      );
+
+      if (invitationResult.rows.length === 0) {
+        return res.status(403).json({ message: "Invalid or expired invitation code." });
+      }
+
+      req.validInvitation = invitationResult.rows[0];
+    }
+
     if (userResult.rows.length === 0) {
-      return res.status(403).json({ message: "No account found for this email. Please contact your administrator." });
+      const defaultName = email.split("@")[0].replace(/[._-]/g, " ");
+      userResult = await pool.query(
+        `INSERT INTO users (email, role, name) VALUES ($1, 'resident', $2) RETURNING *`,
+        [email, defaultName]
+      );
     }
 
     const user = userResult.rows[0];
