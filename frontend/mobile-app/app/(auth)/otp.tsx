@@ -20,6 +20,7 @@ export default function OtpScreen() {
     const login = useAuthStore((state) => state.login);
 
     const inputRefs = React.useRef<Array<TextInput | null>>([]);
+    const isSubmittingRef = React.useRef(false);
 
     useEffect(() => {
         if (countdown <= 0) return;
@@ -44,6 +45,7 @@ export default function OtpScreen() {
     const verifyOtpMutation = useMutation({
         mutationFn: (code: string) => verifyOtp({ email: email || '', code }),
         onSuccess: (data) => {
+            isSubmittingRef.current = false;
             const { token, user } = data;
             login(token, user);
 
@@ -58,6 +60,7 @@ export default function OtpScreen() {
             }
         },
         onError: (error: any) => {
+            isSubmittingRef.current = false;
             Alert.alert('Verification Failed', error.message || 'Invalid OTP');
         }
     });
@@ -75,7 +78,8 @@ export default function OtpScreen() {
 
         if (index === 5 && value && newOtp.every(digit => digit !== '')) {
             const fullCode = newOtp.join('');
-            if (fullCode.length === 6 && !verifyOtpMutation.isPending) {
+            if (fullCode.length === 6 && !isSubmittingRef.current) {
+                isSubmittingRef.current = true;
                 Keyboard.dismiss();
                 verifyOtpMutation.mutate(fullCode);
             }
