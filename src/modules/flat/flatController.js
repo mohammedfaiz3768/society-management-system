@@ -132,7 +132,7 @@ exports.getAllFlats = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT f.*, u.name AS owner_name
+      `SELECT f.*, COALESCE(u.name, f.owner_name) AS owner_name, u.phone AS owner_phone
              FROM flats f
              LEFT JOIN users u ON f.owner_id = u.id
              WHERE f.society_id=$1

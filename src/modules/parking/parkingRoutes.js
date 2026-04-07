@@ -21,7 +21,9 @@ router.use(auth);
 router.get("/", requireRole("admin"), getAllSlots);
 
 router.post("/slot", requireRole("admin"), createSlot);
+router.post("/slots", requireRole("admin"), createSlot);
 router.post("/slot/assign", requireRole("admin"), assignSlot);
+router.post("/assign", requireRole("admin"), assignSlot);
 router.get("/slot", requireRole("admin"), getAllSlots);
 router.get("/slot/mine", requireRole("resident", "admin"), getMySlot);
 router.post("/vehicle", requireRole("resident", "admin"), addVehicle);
