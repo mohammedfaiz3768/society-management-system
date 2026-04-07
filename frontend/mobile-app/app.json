@@ -35,7 +35,6 @@
       "package": "com.societyapp.resident",
       "versionCode": 2,
       "edgeToEdgeEnabled": false,
-      "predictiveBackGestureEnabled": false,
       "minSdkVersion": 26
     },
     "web": {
