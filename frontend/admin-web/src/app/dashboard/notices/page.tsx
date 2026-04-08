@@ -31,7 +31,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 interface Notice {
     id: number;
     title: string;
-    body: string;
+    content: string;
     created_at: string;
     pinned: boolean;
     audience: string;
@@ -53,7 +53,7 @@ export default function NoticesPage() {
     const [formError, setFormError] = useState("");
     const [formData, setFormData] = useState({
         title: "",
-        body: "",
+        content: "",
         pinned: "false",
         audience: "all",
     });
@@ -63,7 +63,7 @@ export default function NoticesPage() {
     }, [user, authLoading, router]);
 
     const resetForm = () => {
-        setFormData({ title: "", body: "", pinned: "false", audience: "all" });
+        setFormData({ title: "", content: "", pinned: "false", audience: "all" });
         setFormError("");
     };
 
@@ -172,9 +172,9 @@ export default function NoticesPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="body">Content</Label>
                                     <Textarea
-                                        id="body"
-                                        value={formData.body}
-                                        onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                                        id="content"
+                                        value={formData.content}
+                                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                                         required
                                         placeholder="Enter the details..."
                                         className="min-h-[100px]"
@@ -274,7 +274,7 @@ export default function NoticesPage() {
                                 )}
                             </div>
                             <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap line-clamp-3">
-                                {notice.body}
+                                {notice.content}
                             </p>
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <span>{new Date(notice.created_at).toLocaleDateString()}</span>

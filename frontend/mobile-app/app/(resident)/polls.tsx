@@ -24,7 +24,7 @@ export default function PollsScreen() {
             queryClient.invalidateQueries({ queryKey: ['polls'] });
         },
         onError: (err: any) => {
-            Alert.alert("Error", err.response?.data?.message || "Failed to vote");
+            Alert.alert("Error", err.message || "Failed to vote");
         }
     });
 

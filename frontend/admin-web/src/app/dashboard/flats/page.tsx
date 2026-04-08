@@ -19,6 +19,13 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface Flat {
     id: number;
@@ -29,6 +36,12 @@ interface Flat {
     owner_phone: string | null;
 }
 
+interface Resident {
+    id: number;
+    name: string;
+    email: string;
+}
+
 const LIMIT = 200;
 
 export default function FlatsPage() {
@@ -36,9 +49,14 @@ export default function FlatsPage() {
     const { user, isLoading: authLoading } = useAuth();
 
     const [flats, setFlats] = useState<Flat[]>([]);
+    const [residents, setResidents] = useState<Resident[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isAssignOpen, setIsAssignOpen] = useState(false);
+    const [selectedFlat, setSelectedFlat] = useState<Flat | null>(null);
+    const [assignUserId, setAssignUserId] = useState("");
+    const [assignError, setAssignError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
     const [formData, setFormData] = useState({
@@ -60,8 +78,12 @@ export default function FlatsPage() {
         setIsLoading(true);
         setFetchError("");
         try {
-            const res = await api.get(`/flats?limit=${LIMIT}`);
-            setFlats(res.data);
+            const [flatsRes, usersRes] = await Promise.all([
+                api.get(`/flats?limit=${LIMIT}`),
+                api.get(`/users?role=resident&limit=${LIMIT}`),
+            ]);
+            setFlats(flatsRes.data);
+            setResidents(usersRes.data);
         } catch (err) {
             if (axios.isAxiosError(err)) {
                 setFetchError(err.response?.data?.message || "Failed to load flats");
@@ -76,6 +98,28 @@ export default function FlatsPage() {
     useEffect(() => {
         if (user) fetchFlats();
     }, [user]);
+
+    const handleAssign = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedFlat || !assignUserId) return;
+        setAssignError("");
+        setIsSubmitting(true);
+        try {
+            await api.post('/flats/assign', { flat_id: selectedFlat.id, user_id: assignUserId });
+            setIsAssignOpen(false);
+            setSelectedFlat(null);
+            setAssignUserId("");
+            fetchFlats();
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                setAssignError(err.response?.data?.message || "Failed to assign resident");
+            } else {
+                setAssignError("An unexpected error occurred");
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -226,7 +270,16 @@ export default function FlatsPage() {
                                         )}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">No resident assigned</p>
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-muted-foreground">No resident assigned</p>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => { setSelectedFlat(flat); setIsAssignOpen(true); }}
+                                        >
+                                            Assign Resident
+                                        </Button>
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
@@ -239,6 +292,42 @@ export default function FlatsPage() {
                     Showing {flats.length} flat{flats.length !== 1 ? "s" : ""}
                 </p>
             )}
+
+            <Dialog open={isAssignOpen} onOpenChange={(open) => {
+                setIsAssignOpen(open);
+                if (!open) { setSelectedFlat(null); setAssignUserId(""); setAssignError(""); }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Assign Resident to Flat {selectedFlat?.flat_number}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleAssign} className="space-y-4 py-4">
+                        {assignError && (
+                            <Alert variant="destructive">
+                                <AlertDescription>{assignError}</AlertDescription>
+                            </Alert>
+                        )}
+                        <div className="space-y-2">
+                            <Label>Select Resident</Label>
+                            <Select value={assignUserId} onValueChange={setAssignUserId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a resident" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {residents.map((r) => (
+                                        <SelectItem key={r.id} value={r.id.toString()}>
+                                            {r.name} ({r.email})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <Button type="submit" className="w-full" disabled={isSubmitting || !assignUserId}>
+                            {isSubmitting ? "Assigning..." : "Assign Resident"}
+                        </Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

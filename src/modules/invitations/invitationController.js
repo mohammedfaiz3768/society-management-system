@@ -1,6 +1,7 @@
 const pool = require("../../config/db");
 const crypto = require("crypto");
 const { logActivity } = require("../../utils/activityLogger");
+const { sendEmail } = require("../../utils/sendEmail");
 
 const VALID_ROLES = ["resident", "guard", "staff"];
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -66,9 +67,17 @@ exports.createInvitation = async (req, res) => {
             description: `Invitation sent to ${email} with role: ${role}`,
         });
 
+        const invitation = result.rows[0];
+
+        sendEmail(
+            email,
+            "You're invited to join Society App",
+            `You have been invited to join as a ${role}.\n\nYour invitation code is: ${code}\n\nOpen the Society App and enter this code when signing up.\n\nThis invitation expires in 7 days.`
+        ).catch(err => console.error("Invitation email failed:", err.message));
+
         return res.json({
             message: "Invitation created successfully",
-            invitation: result.rows[0],
+            invitation,
         });
 
     } catch (err) {
