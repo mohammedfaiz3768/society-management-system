@@ -10,10 +10,10 @@ const pool = new Pool(
   process.env.DATABASE_URL
     ? {
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: true },
+      ssl: { rejectUnauthorized: false },
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 15000,
     }
     : {
       host: process.env.DB_HOST,
@@ -22,11 +22,11 @@ const pool = new Pool(
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       ssl: process.env.DB_HOST?.includes("neon.tech")
-        ? { rejectUnauthorized: true }
+        ? { rejectUnauthorized: false }
         : false,
       max: 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 15000,
     }
 );
 
@@ -34,7 +34,7 @@ pool.query("SELECT NOW()")
   .then(() => console.log("[DB] Connected successfully"))
   .catch(err => {
     console.error("[DB] Connection failed at startup:", err.message);
-    process.exit(1);
+    // Don't exit — let the server start and retry on first request
   });
 
 pool.on("error", (err) => {
