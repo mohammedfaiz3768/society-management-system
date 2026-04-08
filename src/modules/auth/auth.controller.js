@@ -764,15 +764,19 @@ exports.adminRequestOtp = async (req, res) => {
       console.log(`[DEV] ADMIN OTP for ${email}: ${otp}`);
     }
 
-    await sendEmail(email, "Your Admin Login OTP", otp);
+    sendEmail(email, "Your Admin Login OTP", otp).catch(err =>
+      console.error("Admin OTP email failed:", err.message)
+    );
 
-    await logActivity({
-      userId: user.id,
-      type: "admin_otp_requested",
-      entityType: "auth",
-      title: "Admin OTP Requested",
-      description: `OTP requested for admin login`,
-    });
+    try {
+      await logActivity({
+        userId: user.id,
+        type: "admin_otp_requested",
+        entityType: "auth",
+        title: "Admin OTP Requested",
+        description: `OTP requested for admin login`,
+      });
+    } catch (_) {}
 
     res.json({ message: "OTP sent to your email" });
 
