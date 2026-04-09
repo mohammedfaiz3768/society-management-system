@@ -1,6 +1,9 @@
 const db = require("../../config/db");
 const crypto = require("crypto");
-const { sendEmail } = require("../../utils/emailService");
+const { sendEmail: sendEmailRaw } = require("../../utils/sendEmail");
+
+// Adapter: registrationController uses { to, subject, html } format
+const sendEmail = ({ to, subject, html }) => sendEmailRaw(to, subject, html, html);
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^[0-9]{10}$/;
