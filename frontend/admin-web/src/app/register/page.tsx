@@ -186,7 +186,7 @@ export default function RegisterSocietyPage() {
                                             id="society_name"
                                             name="society_name"
                                             required
-                                            placeholder="Green Valley Apartments"
+                                            placeholder="society name"
                                             value={formData.society_name}
                                             onChange={handleChange}
                                             onBlur={checkAvailability}
@@ -231,11 +231,11 @@ export default function RegisterSocietyPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="city">City</Label>
-                                    <Input id="city" name="city" required placeholder="Hyderabad" value={formData.city} onChange={handleChange} />
+                                    <Input id="city" name="city" required placeholder="city" value={formData.city} onChange={handleChange} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="state">State</Label>
-                                    <Input id="state" name="state" required placeholder="Telangana" value={formData.state} onChange={handleChange} />
+                                    <Input id="state" name="state" required placeholder="State" value={formData.state} onChange={handleChange} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="pincode">Pincode</Label>
@@ -260,7 +260,7 @@ export default function RegisterSocietyPage() {
                             </h3>
                             <div className="space-y-2">
                                 <Label htmlFor="admin_name">Your Full Name</Label>
-                                <Input id="admin_name" name="admin_name" required placeholder="Mohammed Faiz" value={formData.admin_name} onChange={handleChange} />
+                                <Input id="admin_name" name="admin_name" required placeholder="Admin Name" value={formData.admin_name} onChange={handleChange} />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
