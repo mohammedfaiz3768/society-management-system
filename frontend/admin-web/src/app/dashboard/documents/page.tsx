@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -9,23 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-    Card,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Plus, FileText, Download, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, FileText, Download, Trash2, FolderOpen } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 
 interface Document {
     id: number;
@@ -50,16 +36,11 @@ export default function DocumentsPage() {
     const [uploadError, setUploadError] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [formData, setFormData] = useState({
-        title: "",
-        description: "",
-    });
+    const [formData, setFormData] = useState({ title: "", description: "" });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     useEffect(() => {
-        if (!authLoading && !user) {
-            router.push("/login");
-        }
+        if (!authLoading && !user) router.push("/login");
     }, [user, authLoading, router]);
 
     const resetForm = () => {
@@ -76,49 +57,32 @@ export default function DocumentsPage() {
             const res = await api.get(`/documents?limit=${LIMIT}`);
             setDocs(res.data);
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setFetchError(err.response?.data?.message || "Failed to load documents");
-            } else {
-                setFetchError("Failed to load documents");
-            }
+            if (axios.isAxiosError(err)) setFetchError(err.response?.data?.message || "Failed to load documents");
+            else setFetchError("Failed to load documents");
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => {
-        if (user) fetchDocs();
-    }, [user]);
+    useEffect(() => { if (user) fetchDocs(); }, [user]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setUploadError("");
-
-        if (!selectedFile) {
-            setUploadError("Please select a file");
-            return;
-        }
-
+        if (!selectedFile) { setUploadError("Please select a file"); return; }
         setIsSubmitting(true);
-
         const data = new FormData();
         data.append("title", formData.title);
         data.append("description", formData.description);
         data.append("file", selectedFile);
-
         try {
-            await api.post('/documents', data, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            await api.post('/documents', data, { headers: { "Content-Type": "multipart/form-data" } });
             setIsDialogOpen(false);
             resetForm();
             fetchDocs();
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setUploadError(err.response?.data?.message || "Failed to upload document");
-            } else {
-                setUploadError("An unexpected error occurred");
-            }
+            if (axios.isAxiosError(err)) setUploadError(err.response?.data?.message || "Failed to upload document");
+            else setUploadError("An unexpected error occurred");
         } finally {
             setIsSubmitting(false);
         }
@@ -131,11 +95,8 @@ export default function DocumentsPage() {
             await api.delete(`/documents/${id}`);
             fetchDocs();
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setActionError(err.response?.data?.message || "Failed to delete document");
-            } else {
-                setActionError("Failed to delete document");
-            }
+            if (axios.isAxiosError(err)) setActionError(err.response?.data?.message || "Failed to delete document");
+            else setActionError("Failed to delete document");
         }
     };
 
@@ -154,69 +115,68 @@ export default function DocumentsPage() {
             link.remove();
             window.URL.revokeObjectURL(url);
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setActionError(err.response?.data?.message || "Download failed");
-            } else {
-                setActionError("Download failed");
-            }
+            if (axios.isAxiosError(err)) setActionError(err.response?.data?.message || "Download failed");
+            else setActionError("Download failed");
         }
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-6 max-w-5xl mx-auto">
+
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Documents</h2>
-                    <p className="text-muted-foreground">Repository for society bylaws, notices, and forms.</p>
+                    <h1 className="text-xl font-bold text-slate-900">Documents</h1>
+                    <p className="text-sm text-zinc-500 mt-0.5">Repository for society bylaws, notices, and forms.</p>
                 </div>
-                <Dialog
-                    open={isDialogOpen}
-                    onOpenChange={(open) => {
-                        setIsDialogOpen(open);
-                        if (!open) resetForm();
-                    }}
-                >
+                <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
                     <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Upload Document
+                        <Button className="bg-rose-600 hover:bg-rose-600 text-white gap-1.5 h-9">
+                            <Plus className="h-4 w-4" /> Upload Document
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Upload Document</DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                        <form onSubmit={handleSubmit} className="space-y-4 py-2">
                             {uploadError && (
                                 <Alert variant="destructive">
                                     <AlertDescription>{uploadError}</AlertDescription>
                                 </Alert>
                             )}
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 <Label>Title</Label>
                                 <Input
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
                                     required
+                                    className="border-slate-200"
+                                    placeholder="e.g. Society Bylaws 2024"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Description</Label>
+                            <div className="space-y-1.5">
+                                <Label>Description <span className="text-slate-500 font-normal text-xs">(optional)</span></Label>
                                 <Textarea
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    className="resize-none border-slate-200"
+                                    rows={2}
+                                    placeholder="Brief description of this document..."
                                 />
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 <Label>File</Label>
                                 <Input
                                     ref={fileInputRef}
                                     type="file"
                                     onChange={e => setSelectedFile(e.target.files ? e.target.files[0] : null)}
                                     required
+                                    className="border-slate-200"
                                 />
                             </div>
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                {isSubmitting ? "Uploading..." : "Upload"}
+                            <Button type="submit" className="w-full bg-rose-600 hover:bg-rose-600" disabled={isSubmitting}>
+                                {isSubmitting ? "Uploading..." : "Upload Document"}
                             </Button>
                         </form>
                     </DialogContent>
@@ -228,63 +188,76 @@ export default function DocumentsPage() {
                     <AlertDescription>{fetchError}</AlertDescription>
                 </Alert>
             )}
-
             {actionError && (
                 <Alert variant="destructive">
                     <AlertDescription>{actionError}</AlertDescription>
                 </Alert>
             )}
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {isLoading ? (
-                    <div className="col-span-full flex justify-center items-center py-16">
-                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            {/* Document grid */}
+            {isLoading ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-5 animate-pulse">
+                            <div className="w-10 h-10 bg-slate-50 rounded-lg mb-4" />
+                            <div className="h-4 w-3/4 bg-slate-50 rounded mb-2" />
+                            <div className="h-3 w-full bg-slate-50 rounded mb-1" />
+                            <div className="h-3 w-2/3 bg-slate-50 rounded" />
+                        </div>
+                    ))}
+                </div>
+            ) : docs.length === 0 ? (
+                <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 py-16 flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-slate-50 flex items-center justify-center">
+                        <FolderOpen className="w-6 h-6 text-slate-500" />
                     </div>
-                ) : docs.length === 0 ? (
-                    <div className="col-span-full text-center py-10 text-muted-foreground">
-                        No documents uploaded yet.
-                    </div>
-                ) : (
-                    docs.map((doc) => (
-                        <Card key={doc.id} className="flex flex-col">
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <div className="p-2 bg-blue-50 rounded-lg">
-                                        <FileText className="h-6 w-6 text-blue-600" />
+                    <p className="text-sm font-medium text-slate-500">No documents uploaded yet</p>
+                    <p className="text-xs text-slate-500">Upload bylaws, forms, and notices for residents.</p>
+                </div>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {docs.map((doc) => {
+                        const ext = doc.file_type?.split("/")[1]?.toUpperCase() || "FILE";
+                        return (
+                            <div key={doc.id} className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-5 flex flex-col hover:shadow-sm transition-shadow">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+                                        <FileText className="h-5 w-5 text-rose-600" />
                                     </div>
-                                    <Badge variant="outline">
-                                        {doc.file_type?.split("/")[1]?.toUpperCase() || "FILE"}
-                                    </Badge>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200 text-zinc-500 bg-white">
+                                        {ext}
+                                    </span>
                                 </div>
-                                <CardTitle className="mt-4 text-lg">{doc.title}</CardTitle>
-                                <CardDescription className="line-clamp-2 min-h-[40px]">
+                                <h3 className="font-semibold text-slate-900 text-sm mb-1 line-clamp-1">{doc.title}</h3>
+                                <p className="text-xs text-slate-500 line-clamp-2 flex-1 mb-4">
                                     {doc.description || "No description"}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardFooter className="mt-auto flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    className="flex-1"
-                                    onClick={() => handleDownload(doc.id, doc.title, doc.file_type)}
-                                >
-                                    <Download className="mr-2 h-4 w-4" /> Download
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDelete(doc.id)}
-                                >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))
-                )}
-            </div>
+                                </p>
+                                <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 h-8 text-xs border-slate-200 gap-1.5"
+                                        onClick={() => handleDownload(doc.id, doc.title, doc.file_type)}
+                                    >
+                                        <Download className="h-3.5 w-3.5" /> Download
+                                    </Button>
+                                    <button
+                                        onClick={() => handleDelete(doc.id)}
+                                        className="p-1.5 rounded-md text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                        title="Delete document"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             {!isLoading && docs.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                    Showing {docs.length} document{docs.length !== 1 ? "s" : ""}
+                <p className="text-xs text-slate-500">
+                    <span className="font-semibold text-slate-500">{docs.length}</span> document{docs.length !== 1 ? "s" : ""}
                 </p>
             )}
         </div>

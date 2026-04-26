@@ -1,31 +1,17 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import api from "@/lib/api";
 import { useAuth } from "@/components/auth-provider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Home, UserPlus, Phone } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Flat {
     id: number;
@@ -59,20 +45,13 @@ export default function FlatsPage() {
     const [assignError, setAssignError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
-    const [formData, setFormData] = useState({
-        flat_number: "",
-        block: "",
-        floor: "",
-    });
+    const [formData, setFormData] = useState({ flat_number: "", block: "", floor: "" });
 
     useEffect(() => {
         if (!authLoading && !user) router.push("/login");
     }, [user, authLoading, router]);
 
-    const resetForm = () => {
-        setFormData({ flat_number: "", block: "", floor: "" });
-        setFormError("");
-    };
+    const resetForm = () => { setFormData({ flat_number: "", block: "", floor: "" }); setFormError(""); };
 
     const fetchFlats = async () => {
         setIsLoading(true);
@@ -85,19 +64,14 @@ export default function FlatsPage() {
             setFlats(flatsRes.data);
             setResidents(usersRes.data);
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setFetchError(err.response?.data?.message || "Failed to load flats");
-            } else {
-                setFetchError("Failed to load flats");
-            }
+            if (axios.isAxiosError(err)) setFetchError(err.response?.data?.message || "Failed to load flats");
+            else setFetchError("Failed to load flats");
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => {
-        if (user) fetchFlats();
-    }, [user]);
+    useEffect(() => { if (user) fetchFlats(); }, [user]);
 
     const handleAssign = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -111,11 +85,8 @@ export default function FlatsPage() {
             setAssignUserId("");
             fetchFlats();
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setAssignError(err.response?.data?.message || "Failed to assign resident");
-            } else {
-                setAssignError("An unexpected error occurred");
-            }
+            if (axios.isAxiosError(err)) setAssignError(err.response?.data?.message || "Failed to assign resident");
+            else setAssignError("An unexpected error occurred");
         } finally {
             setIsSubmitting(false);
         }
@@ -124,12 +95,7 @@ export default function FlatsPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError("");
-
-        if (!formData.flat_number.trim()) {
-            setFormError("Flat number is required");
-            return;
-        }
-
+        if (!formData.flat_number.trim()) { setFormError("Flat number is required"); return; }
         setIsSubmitting(true);
         try {
             await api.post('/flats', formData);
@@ -137,81 +103,77 @@ export default function FlatsPage() {
             resetForm();
             fetchFlats();
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setFormError(err.response?.data?.message || "Failed to add flat");
-            } else {
-                setFormError("An unexpected error occurred");
-            }
+            if (axios.isAxiosError(err)) setFormError(err.response?.data?.message || "Failed to add flat");
+            else setFormError("An unexpected error occurred");
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    const occupiedCount = flats.filter(f => f.owner_name).length;
+    const vacantCount = flats.filter(f => !f.owner_name).length;
+
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="space-y-6 max-w-7xl mx-auto">
+
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Flat Management</h2>
-                    <p className="text-muted-foreground mt-1">Manage all flats in your society</p>
+                    <h1 className="text-xl font-bold text-slate-900">Flat Management</h1>
+                    <p className="text-sm text-zinc-500 mt-0.5">Manage all flats in your society.</p>
                 </div>
-                <Dialog
-                    open={isDialogOpen}
-                    onOpenChange={(open) => {
-                        setIsDialogOpen(open);
-                        if (!open) resetForm();
-                    }}
-                >
+                <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
                     <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Add Flat
+                        <Button className="bg-rose-600 hover:bg-rose-600 text-white gap-1.5 h-9">
+                            <Plus className="h-4 w-4" /> Add Flat
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Add New Flat</DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                        <form onSubmit={handleSubmit} className="space-y-4 py-2">
                             {formError && (
                                 <Alert variant="destructive">
                                     <AlertDescription>{formError}</AlertDescription>
                                 </Alert>
                             )}
                             <div className="grid grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="flat-number">Flat Number *</Label>
+                                <div className="space-y-1.5">
+                                    <Label>Flat Number <span className="text-red-500">*</span></Label>
                                     <Input
-                                        id="flat-number"
                                         value={formData.flat_number}
                                         onChange={(e) => setFormData({ ...formData, flat_number: e.target.value })}
                                         placeholder="101"
                                         maxLength={20}
                                         required
+                                        className="border-slate-200"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="flat-block">Block</Label>
+                                <div className="space-y-1.5">
+                                    <Label>Block</Label>
                                     <Input
-                                        id="flat-block"
                                         value={formData.block}
                                         onChange={(e) => setFormData({ ...formData, block: e.target.value })}
                                         placeholder="A"
                                         maxLength={10}
+                                        className="border-slate-200"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="flat-floor">Floor</Label>
+                                <div className="space-y-1.5">
+                                    <Label>Floor</Label>
                                     <Input
-                                        id="flat-floor"
                                         value={formData.floor}
                                         onChange={(e) => setFormData({ ...formData, floor: e.target.value })}
                                         placeholder="1"
                                         type="number"
                                         min={0}
                                         max={200}
+                                        className="border-slate-200"
                                     />
                                 </div>
                             </div>
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            <Button type="submit" className="w-full bg-rose-600 hover:bg-rose-600" disabled={isSubmitting}>
                                 {isSubmitting ? "Adding..." : "Add Flat"}
                             </Button>
                         </form>
@@ -225,74 +187,99 @@ export default function FlatsPage() {
                 </Alert>
             )}
 
-            <div className="grid gap-4 md:grid-cols-3">
-                {isLoading ? (
-                    <div className="col-span-3 flex justify-center items-center py-16">
-                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            {/* Stat chips */}
+            {!isLoading && flats.length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-500 text-xs font-semibold">
+                        <Home className="w-3.5 h-3.5" /> {flats.length} Total
                     </div>
-                ) : flats.length === 0 ? (
-                    <Card className="col-span-3">
-                        <CardContent className="p-12 text-center text-muted-foreground">
-                            No flats added yet. Click &quot;Add Flat&quot; to get started.
-                        </CardContent>
-                    </Card>
-                ) : (
-                    flats.map((flat) => (
-                        <Card key={flat.id}>
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle className="text-xl">
-                                            {flat.flat_number}
-                                            {flat.block && (
-                                                <span className="text-muted-foreground text-base ml-2">
-                                                    Block {flat.block}
-                                                </span>
-                                            )}
-                                        </CardTitle>
-                                        {flat.floor && (
-                                            <p className="text-sm text-muted-foreground mt-1">Floor {flat.floor}</p>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> {occupiedCount} Occupied
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-200 bg-green-50 text-green-700 text-xs font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> {vacantCount} Vacant
+                    </div>
+                </div>
+            )}
+
+            {/* Flat grid */}
+            {isLoading ? (
+                <div className="grid gap-4 md:grid-cols-3">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-5 animate-pulse">
+                            <div className="flex justify-between mb-3">
+                                <div className="h-5 w-20 bg-slate-50 rounded" />
+                                <div className="h-5 w-16 bg-slate-50 rounded-full" />
+                            </div>
+                            <div className="h-3.5 w-28 bg-slate-50 rounded mb-2" />
+                            <div className="h-3 w-20 bg-slate-50 rounded" />
+                        </div>
+                    ))}
+                </div>
+            ) : flats.length === 0 ? (
+                <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 py-16 flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-slate-50 flex items-center justify-center">
+                        <Home className="w-6 h-6 text-slate-500" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-500">No flats added yet</p>
+                    <p className="text-xs text-slate-500">Click &quot;Add Flat&quot; to get started.</p>
+                </div>
+            ) : (
+                <div className="grid gap-4 md:grid-cols-3">
+                    {flats.map((flat) => (
+                        <div key={flat.id} className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-5 hover:shadow-sm transition-shadow">
+                            <div className="flex items-start justify-between mb-3">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg font-bold text-slate-900">{flat.flat_number}</span>
+                                        {flat.block && (
+                                            <span className="text-xs text-slate-500 font-medium">Block {flat.block}</span>
                                         )}
                                     </div>
-                                    <Badge variant={flat.owner_name ? "default" : "secondary"}>
-                                        {flat.owner_name ? "Occupied" : "Vacant"}
-                                    </Badge>
+                                    {flat.floor && (
+                                        <p className="text-xs text-slate-500 mt-0.5">Floor {flat.floor}</p>
+                                    )}
                                 </div>
-                            </CardHeader>
-                            <CardContent>
-                                {flat.owner_name ? (
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium">{flat.owner_name}</p>
-                                        {flat.owner_phone && (
-                                            <p className="text-sm text-muted-foreground">
-                                                <span aria-hidden="true">📞</span> {flat.owner_phone}
-                                            </p>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">No resident assigned</p>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => { setSelectedFlat(flat); setIsAssignOpen(true); }}
-                                        >
-                                            Assign Resident
-                                        </Button>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    ))
-                )}
-            </div>
+                                <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${flat.owner_name ? 'bg-blue-50 text-blue-700' : 'bg-green-50 text-green-700'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${flat.owner_name ? 'bg-blue-500' : 'bg-green-500'}`} />
+                                    {flat.owner_name ? "Occupied" : "Vacant"}
+                                </span>
+                            </div>
+
+                            {flat.owner_name ? (
+                                <div className="space-y-1 pt-3 border-t border-zinc-50">
+                                    <p className="text-sm font-semibold text-slate-800">{flat.owner_name}</p>
+                                    {flat.owner_phone && (
+                                        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+                                            <Phone className="w-3 h-3" /> {flat.owner_phone}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="pt-3 border-t border-zinc-50">
+                                    <p className="text-xs text-slate-500 mb-2">No resident assigned</p>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-7 text-xs border-emerald-200 text-rose-600 hover:bg-rose-50 gap-1"
+                                        onClick={() => { setSelectedFlat(flat); setIsAssignOpen(true); }}
+                                    >
+                                        <UserPlus className="w-3 h-3" /> Assign Resident
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {!isLoading && flats.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                    Showing {flats.length} flat{flats.length !== 1 ? "s" : ""}
+                <p className="text-xs text-slate-500">
+                    <span className="font-semibold text-slate-500">{flats.length}</span> flat{flats.length !== 1 ? "s" : ""}
                 </p>
             )}
 
+            {/* Assign Dialog */}
             <Dialog open={isAssignOpen} onOpenChange={(open) => {
                 setIsAssignOpen(open);
                 if (!open) { setSelectedFlat(null); setAssignUserId(""); setAssignError(""); }
@@ -301,18 +288,16 @@ export default function FlatsPage() {
                     <DialogHeader>
                         <DialogTitle>Assign Resident to Flat {selectedFlat?.flat_number}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleAssign} className="space-y-4 py-4">
+                    <form onSubmit={handleAssign} className="space-y-4 py-2">
                         {assignError && (
                             <Alert variant="destructive">
                                 <AlertDescription>{assignError}</AlertDescription>
                             </Alert>
                         )}
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <Label>Select Resident</Label>
                             <Select value={assignUserId} onValueChange={setAssignUserId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a resident" />
-                                </SelectTrigger>
+                                <SelectTrigger className="border-slate-200"><SelectValue placeholder="Select a resident" /></SelectTrigger>
                                 <SelectContent>
                                     {residents.map((r) => (
                                         <SelectItem key={r.id} value={r.id.toString()}>
@@ -322,7 +307,7 @@ export default function FlatsPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button type="submit" className="w-full" disabled={isSubmitting || !assignUserId}>
+                        <Button type="submit" className="w-full bg-rose-600 hover:bg-rose-600" disabled={isSubmitting || !assignUserId}>
                             {isSubmitting ? "Assigning..." : "Assign Resident"}
                         </Button>
                     </form>

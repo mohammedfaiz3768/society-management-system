@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -6,11 +6,10 @@ import axios from "axios";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MailCheck } from "lucide-react";
+import { MailCheck, Home, ArrowRight, Building2, CheckCircle } from "lucide-react";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^[0-9]{10}$/;
@@ -42,47 +41,27 @@ export default function RegisterSocietyPage() {
     };
 
     const checkAvailability = async () => {
-        // ✅ Minimum 3 chars before checking
         if (!formData.society_name || formData.society_name.length < 3) return;
         try {
-            // ✅ Use axios instance — consistent with rest of app
             const res = await api.get(`/registration/check-availability?name=${encodeURIComponent(formData.society_name)}`);
             setIsNameAvailable(res.data.available);
             setError(res.data.available ? "" : "Society name is already taken");
         } catch {
-            // Silent — don't block user on availability check failure
+            // silent
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-
-        // ✅ Client-side validation
-        if (!emailRegex.test(formData.admin_email)) {
-            setError("Please enter a valid email address");
-            return;
-        }
-        if (formData.admin_phone && !phoneRegex.test(formData.admin_phone)) {
-            setError("Phone number must be 10 digits");
-            return;
-        }
-        if (formData.pincode && !pincodeRegex.test(formData.pincode)) {
-            setError("Pincode must be 6 digits");
-            return;
-        }
-        if (isNameAvailable === false) {
-            setError("Please choose a different society name");
-            return;
-        }
-        if (!formData.terms) {
-            setError("Please accept the terms and conditions");
-            return;
-        }
+        if (!emailRegex.test(formData.admin_email)) { setError("Please enter a valid email address"); return; }
+        if (formData.admin_phone && !phoneRegex.test(formData.admin_phone)) { setError("Phone number must be 10 digits"); return; }
+        if (formData.pincode && !pincodeRegex.test(formData.pincode)) { setError("Pincode must be 6 digits"); return; }
+        if (isNameAvailable === false) { setError("Please choose a different society name"); return; }
+        if (!formData.terms) { setError("Please accept the terms and conditions"); return; }
 
         setLoading(true);
         try {
-            // ✅ Use axios instance
             await api.post('/registration/register', formData);
             setStep(2);
         } catch (err) {
@@ -106,67 +85,78 @@ export default function RegisterSocietyPage() {
         }
     };
 
-    // ── Success Step ────────────────────────────────────────────────────────
+    // â”€â”€ Success Step â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (step === 2) {
         return (
-            <div className="flex min-h-screen items-center justify-center p-4 bg-zinc-50 dark:bg-zinc-950">
-                <Card className="w-full max-w-md text-center border border-zinc-200 dark:border-zinc-800">
-                    <CardHeader>
-                        <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-950 rounded-full flex items-center justify-center mb-4">
-                            {/* ✅ Proper icon */}
-                            <MailCheck className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <div className="min-h-screen flex items-center justify-center bg-white p-4">
+                <div className="w-full max-w-md bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-gradient-to-br from-rose-600 to-rose-600 px-8 py-10 text-center">
+                        <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4">
+                            <MailCheck className="w-8 h-8 text-slate-900" />
                         </div>
-                        <CardTitle>Check Your Email</CardTitle>
-                        <CardDescription>
-                            We sent a verification link to <strong>{formData.admin_email}</strong>
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-zinc-500">
-                            Click the link to activate your society and start your 30-day free trial.
-                            The link expires in 24 hours.
+                        <h2 className="text-xl font-bold text-slate-900">Check Your Email</h2>
+                        <p className="text-emerald-200 text-sm mt-1">
+                            Sent to <span className="font-semibold text-slate-900">{formData.admin_email}</span>
                         </p>
-                        <Alert>
-                            <AlertDescription className="text-xs">
-                                Didn't receive it? Check your spam folder or resend below.
-                            </AlertDescription>
-                        </Alert>
+                    </div>
+                    <div className="p-8 space-y-5">
+                        <p className="text-sm text-slate-500 text-center leading-relaxed">
+                            Click the verification link to activate your society and start your 30-day free trial. The link expires in 24 hours.
+                        </p>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-700">
+                            Didn't receive it? Check your spam folder or click below to resend.
+                        </div>
                         {resendSuccess && (
-                            <p className="text-sm text-green-600">Verification email resent!</p>
+                            <div className="flex items-center gap-2 text-sm text-green-600 justify-center">
+                                <CheckCircle className="w-4 h-4" /> Verification email resent!
+                            </div>
                         )}
-                    </CardContent>
-                    <CardFooter className="justify-center gap-3">
-                        {/* ✅ Calls resend endpoint — doesn't reload page */}
-                        <Button variant="outline" onClick={handleResend}>
-                            Resend Email
-                        </Button>
-                        <Link href="/login">
-                            <Button variant="ghost">Back to Login</Button>
-                        </Link>
-                    </CardFooter>
-                </Card>
+                        {error && (
+                            <Alert variant="destructive">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+                        <div className="flex gap-3">
+                            <Button variant="outline" className="flex-1 border-slate-200" onClick={handleResend}>
+                                Resend Email
+                            </Button>
+                            <Link href="/login" className="flex-1">
+                                <Button variant="ghost" className="w-full">Back to Login</Button>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
 
-    // ── Registration Form ────────────────────────────────────────────────────
+    // â”€â”€ Registration Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     return (
-        <div className="flex min-h-screen items-center justify-center p-4 bg-zinc-50 dark:bg-zinc-950">
-            <Card className="w-full max-w-2xl border border-zinc-200 dark:border-zinc-800">
-                <CardHeader>
-                    <div className="mb-2">
-                        <span className="font-serif text-xl tracking-tight text-zinc-900 dark:text-zinc-50">
-                            UN<em className="italic text-blue-600">IFY</em>
-                        </span>
-                    </div>
-                    <CardTitle className="text-xl">Register Your Society</CardTitle>
-                    <CardDescription>
-                        Start your 30-day free trial. No credit card required.
-                    </CardDescription>
-                </CardHeader>
+        <div className="min-h-screen bg-white py-8 px-4">
+            <div className="max-w-2xl mx-auto">
 
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Top brand */}
+                <div className="flex items-center gap-2.5 mb-6">
+                    <div className="w-9 h-9 rounded-2xl bg-rose-600 flex items-center justify-center">
+                        <Home className="w-4 h-4 text-slate-900" />
+                    </div>
+                    <span className="text-xl font-bold text-slate-900 tracking-tight">
+                        UN<span className="text-rose-600 italic">IFY</span>
+                    </span>
+                </div>
+
+                <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+                    {/* Card header */}
+                    <div className="px-8 pt-8 pb-6 border-b border-slate-100">
+                        <div className="flex items-center gap-3 mb-1">
+                            <Building2 className="w-5 h-5 text-rose-600" />
+                            <h1 className="text-xl font-bold text-slate-900">Register Your Society</h1>
+                        </div>
+                        <p className="text-sm text-zinc-500">Start your 30-day free trial. No credit card required.</p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="px-8 py-6 space-y-8">
                         {error && (
                             <Alert variant="destructive">
                                 <AlertDescription>{error}</AlertDescription>
@@ -175,33 +165,33 @@ export default function RegisterSocietyPage() {
 
                         {/* Society Details */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                                Society Details
-                            </h3>
+                            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Society Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="society_name">Society Name</Label>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="society_name">Society Name <span className="text-red-500">*</span></Label>
                                     <div className="relative">
                                         <Input
                                             id="society_name"
                                             name="society_name"
                                             required
-                                            placeholder="society name"
+                                            placeholder="e.g. Sunrise Apartments"
                                             value={formData.society_name}
                                             onChange={handleChange}
                                             onBlur={checkAvailability}
                                             className={
-                                                isNameAvailable === true ? "border-green-500" :
-                                                    isNameAvailable === false ? "border-red-500" : ""
+                                                isNameAvailable === true ? "border-green-400 focus:border-green-500" :
+                                                isNameAvailable === false ? "border-red-400 focus:border-red-500" : "border-slate-200"
                                             }
                                         />
                                         {isNameAvailable === true && (
-                                            <span className="absolute right-3 top-2.5 text-green-500 text-xs font-medium">Available ✓</span>
+                                            <span className="absolute right-3 top-1/2 -tranzinc-y-1/2 text-green-600 text-xs font-semibold flex items-center gap-1">
+                                                <CheckCircle className="w-3.5 h-3.5" /> Available
+                                            </span>
                                         )}
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="total_units">Total Flats / Units</Label>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="total_units">Total Flats / Units <span className="text-red-500">*</span></Label>
                                     <Input
                                         id="total_units"
                                         name="total_units"
@@ -212,12 +202,12 @@ export default function RegisterSocietyPage() {
                                         placeholder="120"
                                         value={formData.total_units}
                                         onChange={handleChange}
+                                        className="border-slate-200"
                                     />
                                 </div>
                             </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Address</Label>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="address">Address <span className="text-red-500">*</span></Label>
                                 <Input
                                     id="address"
                                     name="address"
@@ -225,20 +215,20 @@ export default function RegisterSocietyPage() {
                                     placeholder="Plot 45, Sector 12"
                                     value={formData.address}
                                     onChange={handleChange}
+                                    className="border-slate-200"
                                 />
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="city">City</Label>
-                                    <Input id="city" name="city" required placeholder="city" value={formData.city} onChange={handleChange} />
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+                                    <Input id="city" name="city" required placeholder="Hyderabad" value={formData.city} onChange={handleChange} className="border-slate-200" />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="state">State</Label>
-                                    <Input id="state" name="state" required placeholder="State" value={formData.state} onChange={handleChange} />
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="state">State <span className="text-red-500">*</span></Label>
+                                    <Input id="state" name="state" required placeholder="Telangana" value={formData.state} onChange={handleChange} className="border-slate-200" />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="pincode">Pincode</Label>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="pincode">Pincode <span className="text-red-500">*</span></Label>
                                     <Input
                                         id="pincode"
                                         name="pincode"
@@ -248,23 +238,22 @@ export default function RegisterSocietyPage() {
                                         inputMode="numeric"
                                         value={formData.pincode}
                                         onChange={(e) => setFormData({ ...formData, pincode: e.target.value.replace(/\D/g, '') })}
+                                        className="border-slate-200"
                                     />
                                 </div>
                             </div>
                         </div>
 
                         {/* Admin Contact */}
-                        <div className="space-y-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                            <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">
-                                Admin Contact
-                            </h3>
-                            <div className="space-y-2">
-                                <Label htmlFor="admin_name">Your Full Name</Label>
-                                <Input id="admin_name" name="admin_name" required placeholder="Admin Name" value={formData.admin_name} onChange={handleChange} />
+                        <div className="space-y-4 pt-2 border-t border-slate-100">
+                            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest pt-2">Admin Contact</h3>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="admin_name">Your Full Name <span className="text-red-500">*</span></Label>
+                                <Input id="admin_name" name="admin_name" required placeholder="Mohammed Faiz" value={formData.admin_name} onChange={handleChange} className="border-slate-200" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="admin_email">Email Address</Label>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="admin_email">Email Address <span className="text-red-500">*</span></Label>
                                     <Input
                                         id="admin_email"
                                         name="admin_email"
@@ -274,53 +263,68 @@ export default function RegisterSocietyPage() {
                                         autoComplete="email"
                                         value={formData.admin_email}
                                         onChange={handleChange}
+                                        className="border-slate-200"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="admin_phone">Phone Number</Label>
-                                    {/* ✅ Numeric keyboard, numbers only */}
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="admin_phone">Phone Number <span className="text-red-500">*</span></Label>
                                     <Input
                                         id="admin_phone"
                                         name="admin_phone"
                                         type="tel"
                                         inputMode="numeric"
-                                        placeholder="10-digit number"
+                                        placeholder="10-digit mobile number"
                                         maxLength={10}
                                         required
                                         value={formData.admin_phone}
                                         onChange={(e) => setFormData({ ...formData, admin_phone: e.target.value.replace(/\D/g, '') })}
+                                        className="border-slate-200"
                                     />
                                 </div>
                             </div>
                         </div>
 
                         {/* Terms */}
-                        <div className="flex items-start space-x-2 pt-2">
+                        <div className="flex items-start gap-3 pt-2 border-t border-slate-100">
                             <Checkbox
                                 id="terms"
                                 checked={formData.terms}
                                 onCheckedChange={(checked) => setFormData({ ...formData, terms: checked as boolean })}
+                                className="mt-0.5"
                             />
-                            <label htmlFor="terms" className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed cursor-pointer">
-                                I agree to the terms and conditions and privacy policy
+                            <label htmlFor="terms" className="text-sm text-slate-500 leading-relaxed cursor-pointer">
+                                I agree to the <span className="text-rose-600 hover:underline cursor-pointer">terms and conditions</span> and <span className="text-rose-600 hover:underline cursor-pointer">privacy policy</span>
                             </label>
                         </div>
 
-                        <Button type="submit" className="w-full" disabled={loading || isNameAvailable === false}>
-                            {loading ? "Creating Account..." : "Create Society Account"}
+                        <Button
+                            type="submit"
+                            className="w-full h-11 bg-rose-600 hover:bg-rose-600 text-white font-medium rounded-lg"
+                            disabled={loading || isNameAvailable === false}
+                        >
+                            {loading ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    Creating Account...
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    Create Society Account <ArrowRight className="w-4 h-4" />
+                                </span>
+                            )}
                         </Button>
                     </form>
-                </CardContent>
 
-                <CardFooter className="justify-center border-t border-zinc-100 dark:border-zinc-800 pt-4">
-                    <p className="text-sm text-zinc-500">
-                        Already registered?{" "}
-                        <Link href="/login" className="text-blue-600 hover:underline">
-                            Login here
-                        </Link>
-                    </p>
-                </CardFooter>
-            </Card>
+                    <div className="px-8 py-4 border-t border-slate-100 bg-white text-center">
+                        <p className="text-sm text-zinc-500">
+                            Already registered?{" "}
+                            <Link href="/login" className="text-rose-600 hover:text-emerald-800 font-medium hover:underline">
+                                Login here
+                            </Link>
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

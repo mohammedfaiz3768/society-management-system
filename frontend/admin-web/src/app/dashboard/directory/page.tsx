@@ -1,23 +1,21 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Search } from "lucide-react";
+import { Search, Phone, Clock, Users, UserCog, BookUser } from "lucide-react";
 
 interface Resident {
     id: number;
     name: string;
-    phone: string | null; // ✅ null when non-admin views
+    phone: string | null;
     flat_number: string;
     block: string;
     members_count: number;
 }
 
-// ✅ Matches actual backend response
 interface StaffMember {
     id: number;
     name: string;
@@ -26,6 +24,13 @@ interface StaffMember {
     shift_start?: string;
     shift_end?: string;
     status: string;
+}
+
+const AVATAR_COLORS = ['bg-rose-600', 'bg-rose-600', 'bg-purple-500', 'bg-orange-500', 'bg-blue-500'];
+function avatarColor(name: string) {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+    return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 
 export default function DirectoryPage() {
@@ -52,46 +57,33 @@ export default function DirectoryPage() {
 
     useEffect(() => { fetchDirectory(); }, []);
 
-    const filterResidents = (data: Resident[]) => {
-        if (!searchTerm) return data;
+    const filteredResidents = residents.filter(item => {
+        if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
-        return data.filter(item =>
+        return (
             item.name?.toLowerCase().includes(term) ||
             item.phone?.includes(searchTerm) ||
             String(item.flat_number || "").includes(searchTerm)
         );
-    };
+    });
 
-    const filterStaff = (data: StaffMember[]) => {
-        if (!searchTerm) return data;
+    const filteredStaff = staff.filter(item => {
+        if (!searchTerm) return true;
         const term = searchTerm.toLowerCase();
-        return data.filter(item =>
+        return (
             item.name?.toLowerCase().includes(term) ||
             item.role?.toLowerCase().includes(term) ||
             item.phone?.includes(searchTerm)
         );
-    };
-
-    // ✅ Spinner inside layout
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center py-16">
-                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            </div>
-        );
-    }
-
-    const filteredResidents = filterResidents(residents);
-    const filteredStaff = filterStaff(staff);
+    });
 
     return (
-        // ✅ No p-6
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-5xl mx-auto">
+
+            {/* Header */}
             <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Society Directory</h2>
-                <p className="text-sm text-muted-foreground">
-                    Contact information for residents and staff.
-                </p>
+                <h1 className="text-xl font-bold text-slate-900">Society Directory</h1>
+                <p className="text-sm text-zinc-500 mt-0.5">Contact information for residents and staff.</p>
             </div>
 
             {error && (
@@ -100,62 +92,85 @@ export default function DirectoryPage() {
                 </Alert>
             )}
 
-            {/* ✅ Search with icon — consistent with other pages */}
+            {/* Search */}
             <div className="relative max-w-md">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -tranzinc-y-1/2 h-4 w-4 text-slate-500" />
                 <Input
                     placeholder="Search by name, phone, or flat number..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
+                    className="pl-9 border-slate-200"
                 />
             </div>
 
             <Tabs defaultValue="residents" className="w-full">
-                <TabsList>
-                    <TabsTrigger value="residents">
-                        Residents ({residents.length})
+                <TabsList className="bg-slate-50">
+                    <TabsTrigger value="residents" className="gap-1.5">
+                        <Users className="w-3.5 h-3.5" /> Residents ({residents.length})
                     </TabsTrigger>
-                    <TabsTrigger value="staff">
-                        Staff ({staff.length})
+                    <TabsTrigger value="staff" className="gap-1.5">
+                        <UserCog className="w-3.5 h-3.5" /> Staff ({staff.length})
                     </TabsTrigger>
                 </TabsList>
 
                 {/* Residents Tab */}
                 <TabsContent value="residents" className="mt-4">
-                    {filteredResidents.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-12 text-center text-sm text-muted-foreground">
+                    {loading ? (
+                        <div className="grid gap-3 md:grid-cols-2">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-4 animate-pulse">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-slate-50 flex-shrink-0" />
+                                        <div className="space-y-1.5 flex-1">
+                                            <div className="h-3.5 w-32 bg-slate-50 rounded" />
+                                            <div className="h-3 w-20 bg-slate-50 rounded" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : filteredResidents.length === 0 ? (
+                        <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 py-14 flex flex-col items-center gap-3">
+                            <div className="w-14 h-14 rounded-full bg-slate-50 flex items-center justify-center">
+                                <BookUser className="w-6 h-6 text-slate-500" />
+                            </div>
+                            <p className="text-sm text-slate-500">
                                 {searchTerm ? "No residents match your search." : "No residents found."}
-                            </CardContent>
-                        </Card>
+                            </p>
+                        </div>
                     ) : (
                         <div className="grid gap-3 md:grid-cols-2">
                             {filteredResidents.map((resident) => (
-                                <Card key={resident.id}>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle className="text-base">{resident.name}</CardTitle>
-                                        <p className="text-xs text-muted-foreground">
-                                            Flat {resident.flat_number}
-                                            {resident.block && ` · Block ${resident.block}`}
-                                        </p>
-                                    </CardHeader>
-                                    <CardContent className="space-y-1">
-                                        {/* ✅ Only show phone if not null — backend hides for non-admins */}
-                                        {resident.phone && (
-                                            <p className="text-sm flex items-center gap-1.5">
-                                                <span aria-hidden="true">📞</span>
-                                                {resident.phone}
+                                <div key={resident.id} className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-4 hover:shadow-sm transition-shadow">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-full ${avatarColor(resident.name)} flex items-center justify-center text-xs font-bold text-slate-900 flex-shrink-0`}>
+                                            {resident.name?.charAt(0)?.toUpperCase() || '?'}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-slate-800 truncate">{resident.name}</p>
+                                            <p className="text-xs text-slate-500">
+                                                Flat {resident.flat_number}
+                                                {resident.block && <span> آ· Block {resident.block}</span>}
                                             </p>
-                                        )}
-                                        {Number(resident.members_count) > 0 && (
-                                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                                <span aria-hidden="true">👥</span>
-                                                {resident.members_count} family member{Number(resident.members_count) !== 1 ? 's' : ''}
-                                            </p>
-                                        )}
-                                    </CardContent>
-                                </Card>
+                                        </div>
+                                    </div>
+                                    {(resident.phone || Number(resident.members_count) > 0) && (
+                                        <div className="mt-3 pt-3 border-t border-zinc-50 space-y-1">
+                                            {resident.phone && (
+                                                <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                                                    <Phone className="w-3.5 h-3.5 text-slate-500" />
+                                                    {resident.phone}
+                                                </div>
+                                            )}
+                                            {Number(resident.members_count) > 0 && (
+                                                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                                    <Users className="w-3.5 h-3.5" />
+                                                    {resident.members_count} family member{Number(resident.members_count) !== 1 ? 's' : ''}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             ))}
                         </div>
                     )}
@@ -163,39 +178,62 @@ export default function DirectoryPage() {
 
                 {/* Staff Tab */}
                 <TabsContent value="staff" className="mt-4">
-                    {filteredStaff.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-12 text-center text-sm text-muted-foreground">
+                    {loading ? (
+                        <div className="grid gap-3 md:grid-cols-2">
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-4 animate-pulse">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-slate-50 flex-shrink-0" />
+                                        <div className="space-y-1.5 flex-1">
+                                            <div className="h-3.5 w-28 bg-slate-50 rounded" />
+                                            <div className="h-3 w-16 bg-slate-50 rounded" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : filteredStaff.length === 0 ? (
+                        <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 py-14 flex flex-col items-center gap-3">
+                            <div className="w-14 h-14 rounded-full bg-slate-50 flex items-center justify-center">
+                                <UserCog className="w-6 h-6 text-slate-500" />
+                            </div>
+                            <p className="text-sm text-slate-500">
                                 {searchTerm ? "No staff match your search." : "No staff members found."}
-                            </CardContent>
-                        </Card>
+                            </p>
+                        </div>
                     ) : (
                         <div className="grid gap-3 md:grid-cols-2">
                             {filteredStaff.map((member) => (
-                                <Card key={member.id}>
-                                    <CardHeader className="pb-2">
-                                        {/* ✅ No more staff_name/staff_role fallback — clean interface */}
-                                        <CardTitle className="text-base">{member.name}</CardTitle>
-                                        <p className="text-xs text-muted-foreground capitalize">
-                                            {member.role.replace(/_/g, ' ')}
-                                        </p>
-                                    </CardHeader>
-                                    <CardContent className="space-y-1">
-                                        {member.phone && (
-                                            <p className="text-sm flex items-center gap-1.5">
-                                                <span aria-hidden="true">📞</span>
-                                                {member.phone}
-                                            </p>
-                                        )}
-                                        {/* ✅ shift_start/shift_end instead of shift */}
-                                        {member.shift_start && member.shift_end && (
-                                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                                <span aria-hidden="true">🕒</span>
-                                                {member.shift_start} – {member.shift_end}
-                                            </p>
-                                        )}
-                                    </CardContent>
-                                </Card>
+                                <div key={member.id} className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-4 hover:shadow-sm transition-shadow">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-full ${avatarColor(member.name)} flex items-center justify-center text-xs font-bold text-slate-900 flex-shrink-0`}>
+                                            {member.name?.charAt(0)?.toUpperCase() || '?'}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-slate-800 truncate">{member.name}</p>
+                                            <p className="text-xs text-slate-500 capitalize">{member.role.replace(/_/g, ' ')}</p>
+                                        </div>
+                                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${member.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-50 text-zinc-500'}`}>
+                                            {member.status}
+                                        </span>
+                                    </div>
+                                    {(member.phone || (member.shift_start && member.shift_end)) && (
+                                        <div className="mt-3 pt-3 border-t border-zinc-50 space-y-1">
+                                            {member.phone && (
+                                                <div className="flex items-center gap-1.5 text-sm text-slate-500">
+                                                    <Phone className="w-3.5 h-3.5 text-slate-500" />
+                                                    {member.phone}
+                                                </div>
+                                            )}
+                                            {member.shift_start && member.shift_end && (
+                                                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono">
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    {member.shift_start} - {member.shift_end}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             ))}
                         </div>
                     )}
@@ -203,8 +241,8 @@ export default function DirectoryPage() {
             </Tabs>
 
             {!loading && (
-                <p className="text-xs text-muted-foreground">
-                    {filteredResidents.length + filteredStaff.length} results shown
+                <p className="text-xs text-slate-500">
+                    <span className="font-semibold text-slate-500">{filteredResidents.length + filteredStaff.length}</span> results shown
                 </p>
             )}
         </div>

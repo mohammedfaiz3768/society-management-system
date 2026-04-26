@@ -3,16 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import api from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-    Table, TableBody, TableCell, TableHead,
-    TableHeader, TableRow,
-} from "@/components/ui/table";
-import { Search, RefreshCw, LogOut } from "lucide-react";
+import { Search, RefreshCw, LogOut, UserCheck, Users, Clock } from "lucide-react";
 
 interface Visitor {
     id: number;
@@ -40,34 +34,24 @@ export default function VisitorsPage() {
             const res = await api.get("/visitors?limit=100");
             setVisitors(Array.isArray(res.data) ? res.data : []);
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.message || "Failed to load visitors");
-            } else {
-                setError("Failed to load visitors");
-            }
+            if (axios.isAxiosError(err)) setError(err.response?.data?.message || "Failed to load visitors");
+            else setError("Failed to load visitors");
         } finally {
             setIsLoading(false);
         }
     }, []);
 
-    useEffect(() => {
-        fetchVisitors();
-    }, [fetchVisitors]);
+    useEffect(() => { fetchVisitors(); }, [fetchVisitors]);
 
     const handleExit = async (id: number) => {
         if (!confirm("Mark this visitor as exited?")) return;
         setExitingId(id);
         try {
             await api.put(`/visitors/exit/${id}`);
-            setVisitors(prev =>
-                prev.map(v => v.id === id ? { ...v, out_time: new Date().toISOString() } : v)
-            );
+            setVisitors(prev => prev.map(v => v.id === id ? { ...v, out_time: new Date().toISOString() } : v));
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.message || "Failed to mark exit");
-            } else {
-                setError("Failed to mark exit");
-            }
+            if (axios.isAxiosError(err)) setError(err.response?.data?.message || "Failed to mark exit");
+            else setError("Failed to mark exit");
         } finally {
             setExitingId(null);
         }
@@ -76,26 +60,24 @@ export default function VisitorsPage() {
     const filtered = visitors.filter(v => {
         if (!search) return true;
         const q = search.toLowerCase();
-        return (
-            v.name?.toLowerCase().includes(q) ||
-            v.phone?.includes(q) ||
-            v.flat_number?.includes(q) ||
-            v.purpose?.toLowerCase().includes(q)
-        );
+        return v.name?.toLowerCase().includes(q) || v.phone?.includes(q) || v.flat_number?.includes(q) || v.purpose?.toLowerCase().includes(q);
     });
 
     const insideNow = visitors.filter(v => !v.out_time).length;
-    const todayCount = visitors.filter(v => {
-        return new Date(v.in_time).toDateString() === new Date().toDateString();
-    }).length;
+    const todayCount = visitors.filter(v => new Date(v.in_time).toDateString() === new Date().toDateString()).length;
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Visitor Log</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                    All walk-in visitors logged by guards at the gate.
-                </p>
+        <div className="space-y-6 max-w-7xl mx-auto">
+
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-xl font-bold text-slate-900">Visitor Log</h1>
+                    <p className="text-sm text-zinc-500 mt-0.5">All walk-in visitors logged by guards at the gate.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchVisitors} className="border-slate-200 gap-1.5">
+                    <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </Button>
             </div>
 
             {error && (
@@ -104,134 +86,123 @@ export default function VisitorsPage() {
                 </Alert>
             )}
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Currently Inside
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{insideNow}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Today's Visitors
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{todayCount}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Total Records
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-slate-600">{visitors.length}</div>
-                    </CardContent>
-                </Card>
+            {/* Stat chips */}
+            <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-200 bg-green-50 text-green-700 text-xs font-semibold">
+                    <UserCheck className="w-3.5 h-3.5" />
+                    {insideNow} Currently Inside
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold">
+                    <Clock className="w-3.5 h-3.5" />
+                    {todayCount} Today
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-500 text-xs font-semibold">
+                    <Users className="w-3.5 h-3.5" />
+                    {visitors.length} Total Records
+                </div>
             </div>
 
-            {/* Search & Refresh */}
-            <div className="flex gap-3">
-                <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search name, phone, flat..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="pl-8"
-                    />
-                </div>
-                <Button variant="outline" size="sm" onClick={fetchVisitors}>
-                    <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-                </Button>
+            {/* Search */}
+            <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -tranzinc-y-1/2 h-4 w-4 text-slate-500" />
+                <Input
+                    placeholder="Search name, phone, flat..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="pl-9 border-slate-200"
+                />
             </div>
 
             {/* Table */}
-            <div className="rounded-md border bg-white">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Visitor</TableHead>
-                            <TableHead>Flat</TableHead>
-                            <TableHead>Purpose</TableHead>
-                            <TableHead>Entry Time</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+            <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 overflow-hidden">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b border-slate-100 bg-white">
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Visitor</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Flat</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Purpose</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Entry</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
+                            <th className="text-right px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-50">
                         {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    <div className="flex justify-center">
-                                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                                    </div>
-                                </TableCell>
-                            </TableRow>
+                            [...Array(5)].map((_, i) => (
+                                <tr key={i}>
+                                    <td className="px-5 py-4">
+                                        <div className="space-y-1.5">
+                                            <div className="h-3.5 w-28 bg-slate-50 rounded animate-pulse" />
+                                            <div className="h-3 w-20 bg-slate-50 rounded animate-pulse" />
+                                        </div>
+                                    </td>
+                                    <td colSpan={5} />
+                                </tr>
+                            ))
                         ) : filtered.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
-                                    {search ? "No visitors match your search." : "No visitor records found."}
-                                </TableCell>
-                            </TableRow>
+                            <tr>
+                                <td colSpan={6} className="px-5 py-14 text-center">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <UserCheck className="w-8 h-8 text-slate-700" />
+                                        <p className="text-sm text-slate-500">
+                                            {search ? "No visitors match your search." : "No visitor records found."}
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
                         ) : (
                             filtered.map(visitor => (
-                                <TableRow key={visitor.id}>
-                                    <TableCell>
-                                        <div className="font-medium text-sm">{visitor.name}</div>
-                                        <div className="text-xs text-muted-foreground">{visitor.phone}</div>
-                                    </TableCell>
-                                    <TableCell className="text-sm">{visitor.flat_number}</TableCell>
-                                    <TableCell className="text-sm max-w-[180px] truncate">
-                                        {visitor.purpose || "—"}
-                                    </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">
-                                        {new Date(visitor.in_time).toLocaleString()}
-                                    </TableCell>
-                                    <TableCell>
+                                <tr key={visitor.id} className="hover:bg-white/50 transition-colors">
+                                    <td className="px-5 py-3.5">
+                                        <p className="font-semibold text-slate-800">{visitor.name}</p>
+                                        <p className="text-xs text-slate-500 mt-0.5">{visitor.phone}</p>
+                                    </td>
+                                    <td className="px-5 py-3.5 font-mono text-xs text-slate-700">{visitor.flat_number || '—'}</td>
+                                    <td className="px-5 py-3.5 text-slate-500 max-w-[160px] truncate">{visitor.purpose || "—"}</td>
+                                    <td className="px-5 py-3.5 text-xs text-slate-500">
+                                        {new Date(visitor.in_time).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                    </td>
+                                    <td className="px-5 py-3.5">
                                         {visitor.out_time ? (
-                                            <Badge variant="secondary">Exited</Badge>
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-50 text-zinc-500">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                                                Exited
+                                            </span>
                                         ) : (
-                                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                                                 Inside
-                                            </Badge>
+                                            </span>
                                         )}
-                                    </TableCell>
-                                    <TableCell>
+                                    </td>
+                                    <td className="px-5 py-3.5 text-right">
                                         {!visitor.out_time ? (
                                             <Button
                                                 size="sm"
                                                 variant="outline"
                                                 disabled={exitingId === visitor.id}
                                                 onClick={() => handleExit(visitor.id)}
+                                                className="h-7 text-xs border-slate-200 hover:border-red-300 hover:text-red-600 gap-1"
                                             >
-                                                <LogOut className="h-3 w-3 mr-1" />
+                                                <LogOut className="h-3 w-3" />
                                                 {exitingId === visitor.id ? "..." : "Exit"}
                                             </Button>
                                         ) : (
-                                            <span className="text-xs text-muted-foreground">
-                                                {new Date(visitor.out_time).toLocaleTimeString()}
+                                            <span className="text-xs text-slate-500">
+                                                {new Date(visitor.out_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         )}
-                                    </TableCell>
-                                </TableRow>
+                                    </td>
+                                </tr>
                             ))
                         )}
-                    </TableBody>
-                </Table>
+                    </tbody>
+                </table>
             </div>
 
             {!isLoading && (
-                <p className="text-xs text-muted-foreground">
-                    Showing {filtered.length} of {visitors.length} records
+                <p className="text-xs text-slate-500">
+                    Showing <span className="font-semibold text-slate-500">{filtered.length}</span> of <span className="font-semibold text-slate-500">{visitors.length}</span> records
                 </p>
             )}
         </div>

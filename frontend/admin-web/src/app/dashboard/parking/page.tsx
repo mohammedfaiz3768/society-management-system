@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,31 +8,10 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Car, ParkingCircle, Wrench } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ParkingSlot {
     id: number;
@@ -50,6 +29,12 @@ interface Resident {
 }
 
 const LIMIT = 200;
+
+const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+    available:   { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  label: 'Available' },
+    occupied:    { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500',   label: 'Occupied' },
+    maintenance: { bg: 'bg-yellow-50', text: 'text-yellow-700', dot: 'bg-yellow-500', label: 'Maintenance' },
+};
 
 export default function ParkingPage() {
     const router = useRouter();
@@ -72,16 +57,8 @@ export default function ParkingPage() {
         if (!authLoading && !user) router.push("/login");
     }, [user, authLoading, router]);
 
-    const resetNewSlot = () => {
-        setNewSlot({ slot_number: "", type: "resident" });
-        setCreateError("");
-    };
-
-    const resetAssign = () => {
-        setAssignData({ user_id: "" });
-        setAssignError("");
-        setSelectedSlot(null);
-    };
+    const resetNewSlot = () => { setNewSlot({ slot_number: "", type: "resident" }); setCreateError(""); };
+    const resetAssign = () => { setAssignData({ user_id: "" }); setAssignError(""); setSelectedSlot(null); };
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -94,19 +71,14 @@ export default function ParkingPage() {
             setSlots(slotsRes.data);
             setResidents(usersRes.data);
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setFetchError(err.response?.data?.message || "Failed to load parking data");
-            } else {
-                setFetchError("Failed to load parking data");
-            }
+            if (axios.isAxiosError(err)) setFetchError(err.response?.data?.message || "Failed to load parking data");
+            else setFetchError("Failed to load parking data");
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(() => {
-        if (user) fetchData();
-    }, [user]);
+    useEffect(() => { if (user) fetchData(); }, [user]);
 
     const handleCreateSlot = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -118,11 +90,8 @@ export default function ParkingPage() {
             resetNewSlot();
             fetchData();
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setCreateError(err.response?.data?.message || "Failed to create slot");
-            } else {
-                setCreateError("An unexpected error occurred");
-            }
+            if (axios.isAxiosError(err)) setCreateError(err.response?.data?.message || "Failed to create slot");
+            else setCreateError("An unexpected error occurred");
         } finally {
             setIsSubmitting(false);
         }
@@ -134,89 +103,60 @@ export default function ParkingPage() {
         setAssignError("");
         setIsSubmitting(true);
         try {
-            await api.post('/parking/assign', {
-                slot_id: selectedSlot.id,
-                user_id: assignData.user_id,
-            });
+            await api.post('/parking/assign', { slot_id: selectedSlot.id, user_id: assignData.user_id });
             setIsAssignOpen(false);
             resetAssign();
             fetchData();
         } catch (err) {
-            if (axios.isAxiosError(err)) {
-                setAssignError(err.response?.data?.message || "Failed to assign slot");
-            } else {
-                setAssignError("An unexpected error occurred");
-            }
+            if (axios.isAxiosError(err)) setAssignError(err.response?.data?.message || "Failed to assign slot");
+            else setAssignError("An unexpected error occurred");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const openAssignDialog = (slot: ParkingSlot) => {
-        setSelectedSlot(slot);
-        setIsAssignOpen(true);
-    };
-
-    const statusBadge = (status: string) => {
-        switch (status) {
-            case "available":
-                return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Available</Badge>;
-            case "occupied":
-                return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Occupied</Badge>;
-            case "maintenance":
-                return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Maintenance</Badge>;
-            default:
-                return <Badge variant="secondary">{status}</Badge>;
-        }
-    };
+    const availableCount = slots.filter(s => s.status === 'available').length;
+    const occupiedCount = slots.filter(s => s.status === 'occupied').length;
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-6 max-w-7xl mx-auto">
+
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Parking Management</h2>
-                    <p className="text-muted-foreground">Manage parking slots and vehicle assignments.</p>
+                    <h1 className="text-xl font-bold text-slate-900">Parking Management</h1>
+                    <p className="text-sm text-zinc-500 mt-0.5">Manage parking slots and vehicle assignments.</p>
                 </div>
-                <Dialog
-                    open={isDialogOpen}
-                    onOpenChange={(open) => {
-                        setIsDialogOpen(open);
-                        if (!open) resetNewSlot();
-                    }}
-                >
+                <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetNewSlot(); }}>
                     <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Add Slot
+                        <Button className="bg-rose-600 hover:bg-rose-600 text-white gap-1.5 h-9">
+                            <Plus className="h-4 w-4" /> Add Slot
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Add Parking Slot</DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleCreateSlot} className="space-y-4 py-4">
+                        <form onSubmit={handleCreateSlot} className="space-y-4 py-2">
                             {createError && (
                                 <Alert variant="destructive">
                                     <AlertDescription>{createError}</AlertDescription>
                                 </Alert>
                             )}
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 <Label>Slot Number</Label>
                                 <Input
                                     value={newSlot.slot_number}
                                     onChange={(e) => setNewSlot({ ...newSlot, slot_number: e.target.value })}
                                     required
                                     placeholder="e.g. P-101"
+                                    className="border-slate-200"
                                 />
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                                 <Label>Type</Label>
-                                <Select
-                                    value={newSlot.type}
-                                    onValueChange={(v) => setNewSlot({ ...newSlot, type: v })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
+                                <Select value={newSlot.type} onValueChange={(v) => setNewSlot({ ...newSlot, type: v })}>
+                                    <SelectTrigger className="border-slate-200"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="resident">Resident</SelectItem>
                                         <SelectItem value="visitor">Visitor</SelectItem>
@@ -224,7 +164,7 @@ export default function ParkingPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            <Button type="submit" className="w-full bg-rose-600 hover:bg-rose-600" disabled={isSubmitting}>
                                 {isSubmitting ? "Creating..." : "Create Slot"}
                             </Button>
                         </form>
@@ -238,91 +178,112 @@ export default function ParkingPage() {
                 </Alert>
             )}
 
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Slot No</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Assigned To</TableHead>
-                            <TableHead>Flat</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+            {/* Stat chips */}
+            {!isLoading && (
+                <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-200 bg-green-50 text-green-700 text-xs font-semibold">
+                        <ParkingCircle className="w-3.5 h-3.5" /> {availableCount} Available
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-xs font-semibold">
+                        <Car className="w-3.5 h-3.5" /> {occupiedCount} Occupied
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-500 text-xs font-semibold">
+                        <Wrench className="w-3.5 h-3.5" /> {slots.length} Total
+                    </div>
+                </div>
+            )}
+
+            {/* Table */}
+            <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 overflow-hidden">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b border-slate-100 bg-white">
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Slot No</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Type</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Assigned To</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Flat</th>
+                            <th className="text-right px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-50">
                         {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center">
-                                    <div className="flex justify-center items-center">
-                                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ) : slots.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                    No slots found
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            slots.map((slot) => (
-                                <TableRow key={slot.id}>
-                                    <TableCell className="font-medium">{slot.slot_number}</TableCell>
-                                    <TableCell className="capitalize">{slot.type}</TableCell>
-                                    <TableCell>{statusBadge(slot.status)}</TableCell>
-                                    <TableCell>{slot.owner_name || "—"}</TableCell>
-                                    <TableCell>{slot.flat_number || "—"}</TableCell>
-                                    <TableCell className="text-right">
-                                        {slot.status === "available" && slot.type === "resident" && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => openAssignDialog(slot)}
-                                            >
-                                                Assign
-                                            </Button>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
+                            [...Array(6)].map((_, i) => (
+                                <tr key={i}>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-16 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-20 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-5 w-20 bg-slate-50 rounded-full animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-24 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-12 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5" />
+                                </tr>
                             ))
+                        ) : slots.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="px-5 py-12 text-center">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <ParkingCircle className="w-8 h-8 text-slate-700" />
+                                        <p className="text-sm text-slate-500">No parking slots found.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : (
+                            slots.map((slot) => {
+                                const cfg = STATUS_CONFIG[slot.status] || { bg: 'bg-white', text: 'text-slate-500', dot: 'bg-zinc-400', label: slot.status };
+                                return (
+                                    <tr key={slot.id} className="hover:bg-white/50 transition-colors">
+                                        <td className="px-5 py-3.5 font-semibold text-slate-800 font-mono">{slot.slot_number}</td>
+                                        <td className="px-5 py-3.5 text-slate-500 capitalize">{slot.type}</td>
+                                        <td className="px-5 py-3.5">
+                                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                                                {cfg.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-slate-500">{slot.owner_name || "-"}</td>
+                                        <td className="px-5 py-3.5 text-slate-500">{slot.flat_number || "-"}</td>
+                                        <td className="px-5 py-3.5 text-right">
+                                            {slot.status === "available" && slot.type === "resident" && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-7 text-xs border-slate-200 hover:border-emerald-300 hover:text-rose-600"
+                                                    onClick={() => { setSelectedSlot(slot); setIsAssignOpen(true); }}
+                                                >
+                                                    Assign
+                                                </Button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
-                    </TableBody>
-                </Table>
+                    </tbody>
+                </table>
             </div>
 
             {!isLoading && slots.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                    Showing {slots.length} slot{slots.length !== 1 ? "s" : ""}
+                <p className="text-xs text-slate-500">
+                    <span className="font-semibold text-slate-500">{slots.length}</span> slot{slots.length !== 1 ? "s" : ""}
                 </p>
             )}
 
-            <Dialog
-                open={isAssignOpen}
-                onOpenChange={(open) => {
-                    setIsAssignOpen(open);
-                    if (!open) resetAssign();
-                }}
-            >
+            {/* Assign Dialog */}
+            <Dialog open={isAssignOpen} onOpenChange={(open) => { setIsAssignOpen(open); if (!open) resetAssign(); }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Assign Slot {selectedSlot?.slot_number}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleAssignSlot} className="space-y-4 py-4">
+                    <form onSubmit={handleAssignSlot} className="space-y-4 py-2">
                         {assignError && (
                             <Alert variant="destructive">
                                 <AlertDescription>{assignError}</AlertDescription>
                             </Alert>
                         )}
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <Label>Select Resident</Label>
-                            <Select
-                                value={assignData.user_id}
-                                onValueChange={(v) => setAssignData({ user_id: v })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a resident" />
-                                </SelectTrigger>
+                            <Select value={assignData.user_id} onValueChange={(v) => setAssignData({ user_id: v })}>
+                                <SelectTrigger className="border-slate-200"><SelectValue placeholder="Select a resident" /></SelectTrigger>
                                 <SelectContent>
                                     {residents.map((r) => (
                                         <SelectItem key={r.id} value={r.id.toString()}>
@@ -332,7 +293,7 @@ export default function ParkingPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        <Button type="submit" className="w-full bg-rose-600 hover:bg-rose-600" disabled={isSubmitting}>
                             {isSubmitting ? "Assigning..." : "Assign Slot"}
                         </Button>
                     </form>

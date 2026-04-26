@@ -1,13 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
-import { Search } from "lucide-react";
+import { Search, RefreshCw, CheckCircle2, Clock, Users, DoorOpen } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface GatePass {
     id: number;
@@ -31,10 +29,10 @@ function getPassStatus(pass: GatePass) {
     return 'active';
 }
 
-const STATUS_STYLES: Record<string, string> = {
-    active: 'bg-green-100 text-green-800',
-    expired: 'bg-red-100 text-red-800',
-    used: 'bg-blue-100 text-blue-800',
+const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+    active:  { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  label: 'Active' },
+    expired: { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500',    label: 'Expired' },
+    used:    { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500',   label: 'Used' },
 };
 
 export default function GatePage() {
@@ -63,7 +61,6 @@ export default function GatePage() {
 
     useEffect(() => { fetchGatePasses(); }, []);
 
-    // ✅ Client-side filtering — search + status filter
     const filtered = gatePasses.filter(pass => {
         const status = getPassStatus(pass);
         const matchesFilter =
@@ -79,17 +76,23 @@ export default function GatePage() {
         return matchesFilter && matchesSearch;
     });
 
-    // ✅ Derived stats
     const activeCount = gatePasses.filter(p => getPassStatus(p) === 'active').length;
     const todayCount = gatePasses.filter(p => {
         return new Date(p.created_at).toDateString() === new Date().toDateString();
     }).length;
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Gate & Visitors</h2>
-                <p className="text-sm text-muted-foreground">Monitor all gate passes and visitor activity.</p>
+        <div className="space-y-6 max-w-7xl mx-auto">
+
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-xl font-bold text-slate-900">Gate & Visitors</h1>
+                    <p className="text-sm text-zinc-500 mt-0.5">Monitor all gate passes and visitor activity.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchGatePasses} className="border-slate-200 gap-1.5">
+                    <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </Button>
             </div>
 
             {error && (
@@ -98,49 +101,28 @@ export default function GatePage() {
                 </Alert>
             )}
 
-            {/* ✅ Stats using Card components */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Active Passes
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">{activeCount}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Today&apos;s Visitors
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{todayCount}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Total Passes
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-orange-500">{gatePasses.length}</div>
-                    </CardContent>
-                </Card>
+            {/* Stat chips */}
+            <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-200 bg-green-50 text-green-700 text-xs font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {activeCount} Active
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-rose-50 text-rose-600 text-xs font-semibold">
+                    <Clock className="w-3.5 h-3.5" /> {todayCount} Today
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-500 text-xs font-semibold">
+                    <Users className="w-3.5 h-3.5" /> {gatePasses.length} Total
+                </div>
             </div>
 
-            {/* ✅ Search + filters using shadcn components */}
-            <div className="flex flex-col md:flex-row gap-3">
+            {/* Search + filter */}
+            <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -tranzinc-y-1/2 h-4 w-4 text-slate-500" />
                     <Input
                         placeholder="Search visitor, phone, flat..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8"
+                        className="pl-9 border-slate-200"
                     />
                 </div>
                 <div className="flex gap-2">
@@ -149,88 +131,97 @@ export default function GatePage() {
                             key={f}
                             size="sm"
                             variant={filterUsed === f ? "default" : "outline"}
+                            className={filterUsed === f ? "bg-rose-600 hover:bg-rose-600 text-white" : "border-slate-200"}
                             onClick={() => setFilterUsed(f)}
                         >
                             {f === "all" ? "All" : f === "unused" ? "Active" : "Used"}
                         </Button>
                     ))}
                 </div>
-                <Button size="sm" variant="outline" onClick={fetchGatePasses}>
-                    Refresh
-                </Button>
             </div>
 
             {/* Table */}
-            <div className="rounded-md border bg-white">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Visitor</TableHead>
-                            <TableHead>Flat</TableHead>
-                            <TableHead>Vehicle</TableHead>
-                            <TableHead>People</TableHead>
-                            <TableHead>Valid Until</TableHead>
-                            <TableHead>Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+            <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 overflow-hidden">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b border-slate-100 bg-white">
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Visitor</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Flat</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Vehicle</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">People</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Valid Until</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-50">
                         {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    <div className="flex justify-center">
-                                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                                    </div>
-                                </TableCell>
-                            </TableRow>
+                            [...Array(5)].map((_, i) => (
+                                <tr key={i}>
+                                    <td className="px-5 py-3.5">
+                                        <div className="space-y-1.5">
+                                            <div className="h-3.5 w-32 bg-slate-50 rounded animate-pulse" />
+                                            <div className="h-3 w-24 bg-slate-50 rounded animate-pulse" />
+                                        </div>
+                                    </td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-16 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-20 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-8 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-28 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-5 w-16 bg-slate-50 rounded-full animate-pulse" /></td>
+                                </tr>
+                            ))
                         ) : filtered.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-sm text-muted-foreground">
-                                    {searchTerm || filterUsed !== "all" ? "No passes match your filters." : "No gate passes found."}
-                                </TableCell>
-                            </TableRow>
+                            <tr>
+                                <td colSpan={6} className="px-5 py-14 text-center">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <DoorOpen className="w-8 h-8 text-slate-700" />
+                                        <p className="text-sm text-slate-500">
+                                            {searchTerm || filterUsed !== "all" ? "No passes match your filters." : "No gate passes found."}
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
                         ) : (
                             filtered.map((pass) => {
                                 const status = getPassStatus(pass);
+                                const cfg = STATUS_CONFIG[status];
                                 return (
-                                    <TableRow key={pass.id}>
-                                        <TableCell>
-                                            <div className="font-medium text-sm">{pass.visitor_name}</div>
-                                            <div className="text-xs text-muted-foreground">{pass.visitor_phone}</div>
-                                        </TableCell>
-                                        <TableCell className="text-sm">
+                                    <tr key={pass.id} className="hover:bg-white/50 transition-colors">
+                                        <td className="px-5 py-3.5">
+                                            <div className="font-semibold text-slate-800">{pass.visitor_name}</div>
+                                            <div className="text-xs text-slate-500">{pass.visitor_phone}</div>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-slate-500 font-medium">
                                             {pass.block && pass.flat_number
                                                 ? `${pass.block}-${pass.flat_number}`
-                                                : pass.flat_number || '—'}
-                                        </TableCell>
-                                        <TableCell className="text-sm">
-                                            {pass.vehicle_number || '—'}
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="text-sm">
-                                                {pass.number_of_people || 1}
+                                                : pass.flat_number || '-'}
+                                        </td>
+                                        <td className="px-5 py-3.5 text-slate-500 font-mono text-xs">
+                                            {pass.vehicle_number || '-'}
+                                        </td>
+                                        <td className="px-5 py-3.5 text-slate-500">
+                                            {pass.number_of_people || 1}
+                                        </td>
+                                        <td className="px-5 py-3.5 text-xs text-zinc-500">
+                                            {new Date(pass.valid_until).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                                                {cfg.label}
                                             </span>
-                                        </TableCell>
-                                        <TableCell className="text-xs text-muted-foreground">
-                                            {/* ✅ Show date AND time — time matters for gate passes */}
-                                            {new Date(pass.valid_until).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            {/* ✅ Three status states: active, expired, used */}
-                                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${STATUS_STYLES[status]}`}>
-                                                {status}
-                                            </span>
-                                        </TableCell>
-                                    </TableRow>
+                                        </td>
+                                    </tr>
                                 );
                             })
                         )}
-                    </TableBody>
-                </Table>
+                    </tbody>
+                </table>
             </div>
 
             {!loading && (
-                <p className="text-xs text-muted-foreground">
-                    Showing {filtered.length} of {gatePasses.length} passes
+                <p className="text-xs text-slate-500">
+                    Showing <span className="font-semibold text-slate-500">{filtered.length}</span> of <span className="font-semibold text-slate-500">{gatePasses.length}</span> passes
                 </p>
             )}
         </div>

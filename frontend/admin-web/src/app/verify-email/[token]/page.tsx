@@ -66,8 +66,8 @@ export default function VerifyEmailPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center p-4 bg-zinc-50 dark:bg-zinc-950">
-            <Card className="w-full max-w-md text-center border border-zinc-200 dark:border-zinc-800">
+        <div className="flex min-h-screen items-center justify-center p-4 bg-white dark:bg-zinc-950">
+            <Card className="w-full max-w-md text-center border border-slate-200 dark:border-zinc-800">
                 <CardHeader>
                     <div className="mx-auto mb-4 flex items-center justify-center h-14 w-14">
                         {/* ✅ Proper loading spinner */}

@@ -1,12 +1,11 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, IndianRupee, TrendingUp, Clock, RefreshCw, Receipt } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Invoice {
     id: number;
@@ -20,15 +19,15 @@ interface Invoice {
     resident_flat: string | null;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-    PAID: 'bg-green-100 text-green-700',
-    PENDING: 'bg-yellow-100 text-yellow-700',
-    OVERDUE: 'bg-red-100 text-red-700',
-    CANCELLED: 'bg-slate-100 text-slate-500',
+const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+    PAID:      { bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500',  label: 'Paid' },
+    PENDING:   { bg: 'bg-yellow-50', text: 'text-yellow-700', dot: 'bg-yellow-500', label: 'Pending' },
+    OVERDUE:   { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500',    label: 'Overdue' },
+    CANCELLED: { bg: 'bg-white',  text: 'text-zinc-500',  dot: 'bg-zinc-400',  label: 'Cancelled' },
 };
 
 function formatINR(amount: number) {
-    return `₹${amount.toLocaleString('en-IN')}`;
+    return `Rs.${amount.toLocaleString('en-IN')}`;
 }
 
 export default function BillingPage() {
@@ -41,7 +40,6 @@ export default function BillingPage() {
         setIsLoading(true);
         setFetchError("");
         try {
-            // Try admin endpoint first, fall back to personal invoices
             const res = await api.get('/invoices/all?limit=100');
             setInvoices(res.data);
         } catch {
@@ -70,12 +68,17 @@ export default function BillingPage() {
     const thisMonthTotal = invoices.filter(i => i.month_year === currentMonth).reduce((s, i) => s + Number(i.amount), 0);
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Billing & Invoices</h2>
-                <p className="text-sm text-muted-foreground">
-                    Invoices are auto-generated on the 1st of every month for all residents.
-                </p>
+        <div className="space-y-6 max-w-7xl mx-auto">
+
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="text-xl font-bold text-slate-900">Billing & Invoices</h1>
+                    <p className="text-sm text-zinc-500 mt-0.5">Invoices are auto-generated on the 1st of every month for all residents.</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchInvoices} className="border-slate-200 gap-1.5">
+                    <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </Button>
             </div>
 
             {fetchError && (
@@ -84,124 +87,128 @@ export default function BillingPage() {
                 </Alert>
             )}
 
+            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Total Collected
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
-                            {isLoading ? '—' : formatINR(totalCollection)}
+                <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
+                            <TrendingUp className="w-4 h-4 text-green-600" />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">From paid invoices</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            Pending / Overdue
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-orange-500">
-                            {isLoading ? '—' : formatINR(totalPending)}
+                        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Total Collected</p>
+                    </div>
+                    <p className="text-2xl font-bold text-green-600">{isLoading ? '-' : formatINR(totalCollection)}</p>
+                    <p className="text-xs text-slate-500 mt-1">From paid invoices</p>
+                </div>
+                <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center">
+                            <Clock className="w-4 h-4 text-amber-600" />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Awaiting payment</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            This Month
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-slate-900">
-                            {isLoading ? '—' : formatINR(thisMonthTotal)}
+                        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Pending / Overdue</p>
+                    </div>
+                    <p className="text-2xl font-bold text-amber-600">{isLoading ? '-' : formatINR(totalPending)}</p>
+                    <p className="text-xs text-slate-500 mt-1">Awaiting payment</p>
+                </div>
+                <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center">
+                            <IndianRupee className="w-4 h-4 text-rose-600" />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{currentMonth}</p>
-                    </CardContent>
-                </Card>
+                        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">This Month</p>
+                    </div>
+                    <p className="text-2xl font-bold text-slate-900">{isLoading ? '-' : formatINR(thisMonthTotal)}</p>
+                    <p className="text-xs text-slate-500 mt-1">{currentMonth}</p>
+                </div>
             </div>
 
+            {/* Search */}
             <div className="relative max-w-sm">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -tranzinc-y-1/2 h-4 w-4 text-slate-500" />
                 <Input
                     placeholder="Search resident, flat, month..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="pl-8"
+                    className="pl-9 border-slate-200"
                 />
             </div>
 
-            <div className="rounded-md border bg-white">
-                <div className="flex items-center justify-between px-4 py-3 border-b">
-                    <h3 className="text-sm font-medium">All Invoices</h3>
-                    <p className="text-xs text-muted-foreground">Auto-generated monthly via cron job</p>
+            {/* Table */}
+            <div className="bg-white shadow-sm border-slate-100 rounded-2xl border border-slate-200 overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 bg-white">
+                    <div className="flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-rose-600" />
+                        <h3 className="text-sm font-semibold text-slate-800">All Invoices</h3>
+                    </div>
+                    <p className="text-xs text-slate-500">Auto-generated monthly via cron job</p>
                 </div>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Resident</TableHead>
-                            <TableHead>Flat</TableHead>
-                            <TableHead>Month</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Due Date</TableHead>
-                            <TableHead>Paid At</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b border-slate-100">
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Resident</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Flat</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Month</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Amount</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Due Date</th>
+                            <th className="text-left px-5 py-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Paid At</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-50">
                         {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center text-sm text-muted-foreground">
-                                    Loading...
-                                </TableCell>
-                            </TableRow>
-                        ) : filtered.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center text-sm text-muted-foreground">
-                                    {search ? "No invoices match your search." : "No invoices yet. They are generated automatically on the 1st of each month."}
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filtered.map((invoice) => (
-                                <TableRow key={invoice.id}>
-                                    <TableCell className="text-sm font-medium">
-                                        {invoice.user_name || '—'}
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {invoice.resident_flat || '—'}
-                                    </TableCell>
-                                    <TableCell className="text-sm font-medium">
-                                        {invoice.month_year}
-                                    </TableCell>
-                                    <TableCell className="text-sm font-semibold">
-                                        {formatINR(Number(invoice.amount))}
-                                    </TableCell>
-                                    <TableCell>
-                                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[invoice.status] || 'bg-slate-100 text-slate-600'}`}>
-                                            {invoice.status}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">
-                                        {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '—'}
-                                    </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">
-                                        {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString() : '—'}
-                                    </TableCell>
-                                </TableRow>
+                            [...Array(5)].map((_, i) => (
+                                <tr key={i}>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-28 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-16 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-20 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-16 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-5 w-16 bg-slate-50 rounded-full animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-20 bg-slate-50 rounded animate-pulse" /></td>
+                                    <td className="px-5 py-3.5"><div className="h-3.5 w-20 bg-slate-50 rounded animate-pulse" /></td>
+                                </tr>
                             ))
+                        ) : filtered.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="px-5 py-12 text-center">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Receipt className="w-8 h-8 text-slate-700" />
+                                        <p className="text-sm text-slate-500">
+                                            {search ? "No invoices match your search." : "No invoices yet. They are generated automatically on the 1st of each month."}
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : (
+                            filtered.map((invoice) => {
+                                const cfg = STATUS_CONFIG[invoice.status] || STATUS_CONFIG.PENDING;
+                                return (
+                                    <tr key={invoice.id} className="hover:bg-white/50 transition-colors">
+                                        <td className="px-5 py-3.5 font-semibold text-slate-800">{invoice.user_name || '-'}</td>
+                                        <td className="px-5 py-3.5 text-slate-500">{invoice.resident_flat || '-'}</td>
+                                        <td className="px-5 py-3.5 font-medium text-slate-700">{invoice.month_year}</td>
+                                        <td className="px-5 py-3.5 font-semibold text-slate-900">{formatINR(Number(invoice.amount))}</td>
+                                        <td className="px-5 py-3.5">
+                                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${cfg.bg} ${cfg.text}`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                                                {cfg.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-xs text-slate-500">
+                                            {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                                        </td>
+                                        <td className="px-5 py-3.5 text-xs text-slate-500">
+                                            {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
-                    </TableBody>
-                </Table>
+                    </tbody>
+                </table>
             </div>
 
             {!isLoading && (
-                <p className="text-xs text-muted-foreground">
-                    Showing {filtered.length} of {invoices.length} invoices
+                <p className="text-xs text-slate-500">
+                    Showing <span className="font-semibold text-slate-500">{filtered.length}</span> of <span className="font-semibold text-slate-500">{invoices.length}</span> invoices
                 </p>
             )}
         </div>
