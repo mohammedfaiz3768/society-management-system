@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
     Users, Building2, UserCog, AlertCircle, Wrench,
     UserCheck, BarChart2, Zap, ArrowRight, Clock,
@@ -53,7 +53,7 @@ const ENTITY_CONFIG: Record<string, { color: string; dot: string }> = {
     default:      { color: 'text-slate-400', dot: 'bg-slate-400' },
 };
 
-const containerVariants = {
+const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
         opacity: 1,
@@ -61,9 +61,9 @@ const containerVariants = {
     }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
     hidden: { opacity: 0, scale: 0.95, y: 15 },
-    show: { opacity: 1, scale: 1, y: 0, transition: { type: "spring", stiffness: 350, damping: 25 } }
+    show: { opacity: 1, scale: 1, y: 0, transition: { type: "spring" as const, stiffness: 350, damping: 25 } }
 };
 
 function StatCard({
